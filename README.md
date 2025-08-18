@@ -1,4 +1,4 @@
-# 🚀 bagsfm Bundler DBC
+# 🚀 bagsfun Bundler DBC
 
 A high-performance Solana blockchain bundler for automated token creation and launchpad operations on Bonk.fun platform.
 
@@ -32,8 +32,8 @@ A high-performance Solana blockchain bundler for automated token creation and la
 ### Installation
 
 ```bash
-git clone https://github.com/michalstefanow/bagsfm-bundler-dbc.git
-cd bagsfm-bundler-dbc
+git clone https://github.com/michalstefanow/bagsfun-bundler-dbc.git
+cd bagsfun-bundler-dbc
 yarn install
 ```
 
