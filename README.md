@@ -114,8 +114,7 @@ This project is licensed under the ISC License.
 
 ## 📞 Contact
 
-- **Telegram**: [@mylord1_1](https://t.me/mylord1_1)
-- **GitHub**: [@michalstefanow](https://github.com/michalstefanow)
+- **Telegram**: [@mooneagle](https://t.me/mooneagle)
 - **Project**: [bagsfm-bundler-dbc](https://github.com/michalstefanow/bagsfm-bundler-dbc)
 
 ---
