@@ -1,0 +1,33 @@
+{
+  "name": "@pump-bundler/cli",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "types": "index.ts",
+  "license": "MIT",
+  "scripts": {
+    "start": "ts-node index.ts",
+    "setup": "ts-node setup.ts",
+    "dev": "ts-node --watch index.ts"
+  },
+  "dependencies": {
+    "@pump-bundler/types": "*",
+    "@pump-bundler/constants": "*",
+    "@pump-bundler/utils": "*",
+    "@pump-bundler/core": "*",
+    "@solana/web3.js": "^1.89.1",
+    "blessed": "^0.1.81",
+    "blessed-contrib": "^4.11.0",
+    "chalk": "^4.1.2",
+    "commander": "^11.1.0",
+    "inquirer": "^8.2.5",
+    "ora": "^5.4.1",
+    "cli-spinners": "^2.9.2",
+    "gradient-string": "^2.0.2",
+    "figlet": "^1.7.0"
+  },
+  "devDependencies": {
+    "@types/blessed": "^0.1.21",
+    "@types/inquirer": "^9.0.7",
+    "@types/figlet": "^1.5.8"
+  }
+}

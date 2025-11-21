@@ -1,0 +1,18 @@
+{
+  "name": "@pump-bundler/core",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "types": "index.ts",
+  "license": "MIT",
+  "dependencies": {
+    "@pump-bundler/types": "*",
+    "@pump-bundler/constants": "*",
+    "@pump-bundler/utils": "*",
+    "@solana/web3.js": "^1.89.1",
+    "@solana/spl-token": "^0.4.0",
+    "@coral-xyz/anchor": "^0.30.1",
+    "axios": "^1.6.8",
+    "bs58": "^6.0.0",
+    "form-data": "^4.0.0"
+  }
+}

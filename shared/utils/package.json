@@ -1,0 +1,12 @@
+{
+  "name": "@pump-bundler/utils",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "types": "index.ts",
+  "license": "MIT",
+  "dependencies": {
+    "@pump-bundler/types": "*",
+    "@solana/web3.js": "^1.89.1",
+    "bs58": "^6.0.0"
+  }
+}

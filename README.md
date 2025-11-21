@@ -1,153 +1,338 @@
-# 🛠️ bagsfun-bundler-dbc - Solana Token Bundler
+# 🚀 Pump.fun Advanced Bundler
 
-## 🌟 Overview
-This is a Solana token bundler for bags.fun/bonk.fun platform. It automates the process of creating tokens, distributing SOL to multiple wallets, and bundling simultaneous buy transactions using Jito for MEV protection.
+A professional-grade pump.fun bundler with CLI and browser interfaces supporting both **Classic** and **Mayhem** modes.
 
-## 🚀 Getting Started
+## ✨ Features
 
-### Prerequisites
-- Node.js and Yarn installed
-- Solana wallet with sufficient SOL balance
-- Helius RPC endpoint (or other Solana RPC provider)
+### Core Features
+- ✅ **Dual Mode Support**: Classic & Mayhem modes with automatic bonding curve adjustments
+- ✅ **Advanced RPC Management**: Multi-RPC support with automatic failover and health monitoring
+- ✅ **Custom RPC**: Add your own RPC endpoints with priority configuration
+- ✅ **Backup RPC System**: Automatic failover to backup RPCs when primary fails
+- ✅ **Multi-Wallet Bundling**: Distribute and bundle buys across multiple wallets
+- ✅ **Anti-Detection**: Randomize amounts, timings, and compute budgets
+- ✅ **Jito Integration**: MEV protection with Jito bundles
+- ✅ **Multiple Distribution Strategies**: Even, Random, Fibonacci, Whale, Custom
+- ✅ **CLI Interface**: Beautiful terminal UI with real-time updates
+- ✅ **Browser Interface**: Web-based dashboard (Next.js)
 
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd bagsfun-bundler-dbc
-   ```
-
-2. **Install dependencies**
-   ```bash
-   yarn install
-   ```
-
-3. **Run the interactive setup**
-   ```bash
-   yarn setup
-   ```
-
-   The setup wizard will prompt you for:
-   - Wallet configuration (private key)
-   - RPC endpoints
-   - Bundle configuration (swap amount, wallet count, Jito fee)
-   - Token metadata (name, symbol, description, image)
-   - Social links (Twitter, Telegram, website)
-   - Optional: Single wallet bundle configuration
-   - Optional: Vanity address generation
-
-4. **Start bundling**
-   ```bash
-   yarn start
-   ```
-
-## 📋 Configuration Methods
-
-### Option 1: Interactive CLI Setup (Recommended)
-Run `yarn setup` and enter your configuration values one by one. This is the easiest method and stores your configuration in `config/bundler-config.json`.
-
-### Option 2: Environment Variables (.env file)
-Copy `.env.example` to `.env` and fill in your values:
-```bash
-cp .env.example .env
-```
-
-The system will automatically use CLI config if available, otherwise fall back to `.env` file.
-
-## 📋 Available Commands
-
-### Setup
-```bash
-yarn setup
-```
-Interactive CLI wizard to configure your bundler settings.
-
-### Main Bundler (Multi-Wallet)
-```bash
-yarn start
-```
-Creates a token and executes bundled buys across multiple wallets.
-
-### Single Wallet Bundle
-```bash
-yarn single
-```
-Creates a token with a single buyer wallet (simpler version).
-
-### View Holdings
-```bash
-yarn status
-```
-Displays token holdings and percentages for each bundler wallet.
-
-### Gather Funds
-```bash
-yarn gather
-```
-Sells all tokens from bundler wallets and transfers funds back to main wallet.
-
-### Close Lookup Table
-```bash
-yarn close
-```
-Deactivates and closes the Address Lookup Table (requires 250 second cooldown).
-
-## 🏗️ Features
-
-- **Interactive CLI Setup**: Easy configuration without manually editing files
-- **Multi-Wallet Bundling**: Distribute SOL and execute simultaneous buys
-- **Jito Integration**: MEV protection for transaction execution
-- **Address Lookup Tables**: Transaction size optimization
-- **Vanity Address Generation**: Optional "bonk" suffix for token addresses
-- **IPFS Metadata Upload**: Automatic token metadata hosting
-- **Fund Management**: Easy gathering of funds back to main wallet
+### Advanced Features
+- 🎯 **Token Sniper**: Monitor and auto-buy new tokens with filters
+- 📈 **Volume Generator**: Create organic-looking trading volume
+- 💰 **Smart Sell Strategies**: Gradual, Trigger-based, and Scheduled sells
+- 📊 **Portfolio Tracking**: Real-time P&L and holdings monitoring
+- 🔒 **Risk Management**: Slippage protection, honeypot detection, simulation mode
+- 🚨 **Health Monitoring**: RPC health checks with automatic failover
 
 ## 📁 Project Structure
 
 ```
-bagsfun-bundler-dbc/
-├── setup.ts                 # Interactive CLI setup wizard
-├── index.ts                 # Main multi-wallet bundler
-├── oneWalletBundle.ts       # Single wallet bundler
-├── gather.ts                # Fund collection utility
-├── status.ts                # Portfolio viewer
-├── closeLut.ts              # Lookup table cleanup
-├── constants/
-│   └── constants.ts         # Configuration loader
-├── utils/
-│   └── utils.ts             # Helper functions
-├── src/
-│   └── main.ts              # Core token creation logic
-├── executor/
-│   ├── jito.ts              # Jito bundle execution
-│   └── legacy.ts            # Legacy transaction execution
-└── config/
-    └── bundler-config.json  # Generated by setup wizard
+pump-bundler/
+├── packages/
+│   ├── core/               # Core pump.fun integration
+│   │   ├── rpc-manager.ts  # RPC management with failover
+│   │   ├── pump-fun.ts     # Pump.fun client (classic & mayhem)
+│   │   ├── bundler.ts      # Multi-wallet bundling
+│   │   ├── sniper.ts       # Token sniping bot
+│   │   └── volume.ts       # Volume generation
+│   ├── cli/                # CLI interface
+│   │   ├── setup.ts        # Interactive setup wizard
+│   │   ├── dashboard.ts    # TUI dashboard
+│   │   └── commands/       # CLI commands
+│   └── web/                # Browser interface
+│       ├── app/            # Next.js app
+│       └── components/     # React components
+└── shared/
+    ├── types/              # TypeScript types
+    ├── constants/          # Constants & config
+    └── utils/              # Shared utilities
 ```
 
-## 📋 System Requirements
+## 🚀 Quick Start
 
-- **Operating System**: Windows, macOS, or Linux
-- **Node.js**: v16 or higher
-- **Yarn**: Latest version
-- **Network**: Stable internet connection for RPC access
+### Installation
 
-## ⚠️ Security Notes
+```bash
+# Clone and install
+git clone <repo-url>
+cd pump-bundler
+yarn install
 
-- Never commit your `.env` file or `config/bundler-config.json` to version control
-- Keep your private keys secure and never share them
-- The `config/` folder is automatically gitignored for your safety
-- This tool handles real cryptocurrency transactions - use with caution
+# Run interactive setup
+yarn setup
 
-## 🛠️ Contributing
+# Start CLI bundler
+yarn cli
 
-Contributions are welcome! Please fork the repository and submit a pull request.
+# Or start web interface
+yarn web
+```
 
-## ✏️ License
+### Interactive Setup
 
-This project is licensed under the ISC License.
+The setup wizard will prompt you for:
+
+1. **RPC Configuration**
+   - Primary RPC endpoint (Helius, QuickNode, etc.)
+   - Backup RPC endpoints
+   - Custom RPC endpoints
+   - Websocket endpoints
+   - Health check settings
+
+2. **Wallet Configuration**
+   - Main wallet private key
+   - Number of bundler wallets to generate
+   - Wallet distribution strategy
+
+3. **Mode Selection**
+   - Classic mode (standard bonding curve)
+   - Mayhem mode (50% faster graduation)
+
+4. **Bundle Strategy**
+   - Distribution type (even, random, fibonacci, whale, custom)
+   - Anti-detection settings
+   - Slippage protection
+   - Priority fees
+
+5. **Jito Configuration**
+   - Enable/disable Jito bundles
+   - Tip amount
+   - Preferred regions
+
+6. **Advanced Features**
+   - Token sniper configuration
+   - Volume generator settings
+   - Sell strategy preferences
+   - Risk management rules
+
+## 🎮 CLI Usage
+
+### Main Commands
+
+```bash
+# Create and bundle a token
+yarn cli create
+
+# Snipe new tokens
+yarn cli snipe
+
+# Generate volume
+yarn cli volume
+
+# View portfolio
+yarn cli portfolio
+
+# Manage RPCs
+yarn cli rpc list
+yarn cli rpc add
+yarn cli rpc switch <id>
+yarn cli rpc health
+
+# Sell tokens
+yarn cli sell --strategy gradual
+yarn cli sell --strategy trigger --target 2x
+```
+
+### CLI Dashboard
+
+The CLI features a beautiful terminal UI with:
+- Real-time RPC health status
+- Active token monitoring
+- Transaction logs
+- Portfolio overview
+- Task progress tracking
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  PUMP.FUN BUNDLER v1.0 - Mode: [MAYHEM]                     │
+├─────────────────────────────────────────────────────────────┤
+│  RPC: Helius (Primary) ● 45ms | Backup: QuickNode ● 62ms   │
+│  Wallet: 8cKd...xY7q | Balance: 12.5 SOL                    │
+│  Bundler Wallets: 12 ready | Total SOL: 1.2                │
+├─────────────────────────────────────────────────────────────┤
+│  [1] Create & Bundle Token                                   │
+│  [2] Snipe New Tokens                                        │
+│  [3] Generate Volume                                         │
+│  [4] View Portfolio                                          │
+│  [5] Sell Strategy                                           │
+│  [6] RPC Management                                          │
+│  [7] Settings                                                │
+│  [0] Exit                                                    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## 🌐 Browser Interface
+
+Start the web interface:
+
+```bash
+yarn web
+```
+
+Features:
+- Wallet adapter integration (Phantom, Solflare, etc.)
+- Real-time transaction monitoring
+- Interactive charts
+- Token creation wizard
+- Portfolio dashboard
+- RPC health monitoring
+
+## 🔧 RPC Management
+
+### Add Custom RPC
+
+```bash
+yarn cli rpc add \
+  --name "My Custom RPC" \
+  --url "https://my-rpc.com" \
+  --ws "wss://my-rpc.com" \
+  --priority 1
+```
+
+### Switch RPC
+
+```bash
+yarn cli rpc switch helius-2
+```
+
+### RPC Configuration File
+
+```json
+{
+  "endpoints": [
+    {
+      "id": "helius-1",
+      "name": "Helius Primary",
+      "url": "https://mainnet.helius-rpc.com/?api-key=YOUR_KEY",
+      "wsUrl": "wss://mainnet.helius-rpc.com/?api-key=YOUR_KEY",
+      "priority": 1,
+      "isCustom": false,
+      "maxRetries": 3,
+      "timeout": 30000,
+      "healthCheckInterval": 60000
+    },
+    {
+      "id": "custom-1",
+      "name": "My RPC",
+      "url": "https://my-rpc.com",
+      "priority": 2,
+      "isCustom": true,
+      "maxRetries": 3,
+      "timeout": 30000,
+      "healthCheckInterval": 60000
+    }
+  ],
+  "autoFailover": true,
+  "healthCheckEnabled": true,
+  "maxFailoverAttempts": 3
+}
+```
+
+## 📊 Mode Comparison
+
+| Feature | Classic Mode | Mayhem Mode |
+|---------|-------------|-------------|
+| Bonding Curve Speed | 1.0x | 1.5x (50% faster) |
+| Graduation Threshold | 85 SOL | 85 SOL |
+| Platform Fee | 1% | 1.5% |
+| Creation Fee | 0.02 SOL | 0.03 SOL |
+| Max Buy % | 2.0% | 2.5% |
+| Est. Graduation Time | ~60 min | ~40 min |
+
+## 🎯 Distribution Strategies
+
+### Even Distribution
+All wallets receive equal amounts.
+
+### Random Distribution
+Random amounts with variance for natural appearance.
+
+### Fibonacci Distribution
+Amounts follow Fibonacci sequence (1, 1, 2, 3, 5, 8...).
+
+### Whale Distribution
+First wallet gets 40%, second 20%, rest distributed evenly.
+
+### Custom Distribution
+Define exact percentages for each wallet.
+
+## 🛡️ Risk Management
+
+- **Slippage Protection**: Set max acceptable slippage
+- **Simulation Mode**: Test transactions before execution
+- **Honeypot Detection**: Check for suspicious contracts
+- **Max Price Impact**: Limit market impact per transaction
+- **Stop Loss**: Automatic sell on threshold breach
+- **Take Profit**: Auto-sell at profit targets
+
+## 🔐 Security
+
+- Never commit private keys or config files
+- All sensitive data stored in `.gitignored` directories
+- RPC endpoints encrypted in config
+- Wallet data never leaves your machine
+
+## 📈 Example Workflows
+
+### Workflow 1: Create & Bundle
+```bash
+# 1. Run setup
+yarn setup
+
+# 2. Create token with 12 wallet bundle
+yarn cli create \
+  --name "My Token" \
+  --symbol "MTK" \
+  --mode mayhem \
+  --wallets 12 \
+  --amount 0.5 \
+  --distribution fibonacci
+
+# 3. Monitor in dashboard
+yarn cli dashboard
+```
+
+### Workflow 2: Snipe New Tokens
+```bash
+# Configure sniper
+yarn cli snipe config \
+  --min-liquidity 10 \
+  --max-liquidity 100 \
+  --require-socials \
+  --auto-buy
+
+# Start sniping
+yarn cli snipe start
+```
+
+### Workflow 3: Generate Volume
+```bash
+# Generate organic volume
+yarn cli volume \
+  --token <MINT_ADDRESS> \
+  --target-volume 50 \
+  --duration 60 \
+  --pattern wave
+```
+
+## 🤝 Contributing
+
+Contributions welcome! Please read CONTRIBUTING.md first.
+
+## 📄 License
+
+MIT License - see LICENSE file for details
+
+## ⚠️ Disclaimer
+
+This tool is for educational purposes only. Use at your own risk. The authors are not responsible for any financial losses. Always comply with local regulations and pump.fun terms of service.
+
+## 🆘 Support
+
+- GitHub Issues: Report bugs or request features
+- Documentation: Full docs at `/docs`
+- Discord: Join our community (link)
 
 ---
 
-**Note**: This tool is for authorized use only. Ensure you understand Solana transactions and token creation before using this bundler.
+**Built with ❤️ for the Solana community**
