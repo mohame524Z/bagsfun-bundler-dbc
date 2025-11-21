@@ -3,16 +3,22 @@
 import { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { Connection } from '@solana/web3.js';
 import { PumpMode } from '@pump-bundler/types';
 import Dashboard from '../components/Dashboard';
 import TokenCreator from '../components/TokenCreator';
 import SniperPanel from '../components/SniperPanel';
 import VolumePanel from '../components/VolumePanel';
 import RPCManager from '../components/RPCManager';
+import PortfolioPanel from '../components/PortfolioPanel';
+import SellPanel from '../components/SellPanel';
+
+// Initialize connection (should come from RPC manager in production)
+const connection = new Connection('https://api.mainnet-beta.solana.com');
 
 export default function Home() {
   const { connected } = useWallet();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'create' | 'sniper' | 'volume' | 'rpc'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'portfolio' | 'create' | 'sell' | 'sniper' | 'volume' | 'rpc'>('dashboard');
   const [mode, setMode] = useState<PumpMode>(PumpMode.MAYHEM);
 
   return (
@@ -61,13 +67,15 @@ export default function Home() {
           </div>
 
           {/* Navigation */}
-          <nav className="flex gap-2 mt-6">
+          <nav className="flex gap-2 mt-6 flex-wrap">
             {[
-              { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
-              { id: 'create', label: '🚀 Create', icon: '🚀' },
-              { id: 'sniper', label: '🎯 Sniper', icon: '🎯' },
-              { id: 'volume', label: '📈 Volume', icon: '📈' },
-              { id: 'rpc', label: '📡 RPC', icon: '📡' },
+              { id: 'dashboard', label: '📊 Dashboard' },
+              { id: 'portfolio', label: '💼 Portfolio' },
+              { id: 'create', label: '🚀 Create' },
+              { id: 'sell', label: '💰 Sell' },
+              { id: 'sniper', label: '🎯 Sniper' },
+              { id: 'volume', label: '📈 Volume' },
+              { id: 'rpc', label: '📡 RPC' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -103,7 +111,9 @@ export default function Home() {
         ) : (
           <div>
             {activeTab === 'dashboard' && <Dashboard mode={mode} />}
+            {activeTab === 'portfolio' && <PortfolioPanel connection={connection} mode={mode} />}
             {activeTab === 'create' && <TokenCreator mode={mode} />}
+            {activeTab === 'sell' && <SellPanel connection={connection} mode={mode} />}
             {activeTab === 'sniper' && <SniperPanel mode={mode} />}
             {activeTab === 'volume' && <VolumePanel mode={mode} />}
             {activeTab === 'rpc' && <RPCManager />}

@@ -241,7 +241,7 @@ async function setup() {
   // ============================================
 
   console.log(chalk.bold.cyan('\n⚡ Jito Configuration\n'));
-  console.log(chalk.gray('Jito bundles provide MEV protection\n'));
+  console.log(chalk.gray('Jito bundles provide MEV protection and priority execution\n'));
 
   const jitoAnswers = await inquirer.prompt([
     {
@@ -251,25 +251,69 @@ async function setup() {
       default: true
     },
     {
-      type: 'number',
-      name: 'tipAmount',
-      message: 'Jito tip amount (SOL):',
-      default: 0.001,
+      type: 'list',
+      name: 'tipPreset',
+      message: 'Select Jito tip amount:',
       when: (answers) => answers.enabled,
+      choices: [
+        {
+          name: '0.0001 SOL - Low (~25th percentile, slower execution)',
+          value: 0.0001
+        },
+        {
+          name: '0.0005 SOL - Medium (~50th percentile, normal execution)',
+          value: 0.0005
+        },
+        {
+          name: '0.001 SOL - High (~75th percentile, fast execution) [Recommended]',
+          value: 0.001
+        },
+        {
+          name: '0.005 SOL - Very High (~90th percentile, priority execution)',
+          value: 0.005
+        },
+        {
+          name: '0.01 SOL - Maximum (~95th percentile, highest priority)',
+          value: 0.01
+        },
+        {
+          name: 'Custom amount',
+          value: 'custom'
+        }
+      ],
+      default: 0.001
+    },
+    {
+      type: 'number',
+      name: 'customTip',
+      message: 'Enter custom Jito tip amount (SOL):',
+      when: (answers) => answers.enabled && answers.tipPreset === 'custom',
       validate: (input) => {
-        if (input < 0) return 'Must be positive';
+        if (input < 0.00001) return 'Minimum 0.00001 SOL';
         if (input > 1) return 'Maximum 1 SOL';
         return true;
       }
     }
   ]);
 
+  let finalTipAmount = 0.001;
+  if (jitoAnswers.enabled) {
+    if (jitoAnswers.tipPreset === 'custom') {
+      finalTipAmount = jitoAnswers.customTip;
+    } else {
+      finalTipAmount = jitoAnswers.tipPreset;
+    }
+  }
+
   config.jito = {
     enabled: jitoAnswers.enabled,
-    tipAmount: jitoAnswers.tipAmount || 0.001,
+    tipAmount: finalTipAmount,
     endpoints: [
       'https://mainnet.block-engine.jito.wtf/api/v1/bundles',
-      'https://amsterdam.mainnet.block-engine.jito.wtf/api/v1/bundles'
+      'https://amsterdam.mainnet.block-engine.jito.wtf/api/v1/bundles',
+      'https://frankfurt.mainnet.block-engine.jito.wtf/api/v1/bundles',
+      'https://ny.mainnet.block-engine.jito.wtf/api/v1/bundles',
+      'https://tokyo.mainnet.block-engine.jito.wtf/api/v1/bundles'
     ]
   };
 

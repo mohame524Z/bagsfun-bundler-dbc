@@ -20,6 +20,8 @@ import {
   PumpMode
 } from '@pump-bundler/types';
 import { PumpFunClient } from './pump-fun';
+import { PortfolioTracker, BuyRecord } from './portfolio';
+import { Seller } from './seller';
 import {
   generateKeypairs,
   calculateDistribution,
@@ -41,11 +43,15 @@ export class Bundler {
   private mainWallet: Keypair;
   private bundlerWallets: Keypair[] = [];
   private lookupTableAddress?: PublicKey;
+  private portfolio: PortfolioTracker;
+  private seller: Seller;
 
   constructor(connection: Connection, mainWallet: Keypair, mode: PumpMode) {
     this.connection = connection;
     this.mainWallet = mainWallet;
     this.pumpClient = new PumpFunClient(connection, mode);
+    this.portfolio = new PortfolioTracker(connection, mode);
+    this.seller = new Seller(connection, this.pumpClient, this.portfolio);
   }
 
   // ============================================
@@ -61,6 +67,9 @@ export class Bundler {
     logger.info('Saving wallet keys...');
 
     saveKeypairs(this.bundlerWallets, 'keys/bundler-wallets.json');
+
+    // Add wallets to portfolio tracker
+    this.portfolio.addWallets(this.bundlerWallets);
 
     return this.bundlerWallets;
   }
@@ -506,6 +515,23 @@ export class Bundler {
 
         await this.connection.confirmTransaction(signature);
 
+        // Record buy in portfolio
+        const buyAmount = strategy.antiDetection.randomizeAmounts
+          ? addRandomVariance(0.1, strategy.antiDetection.amountVariance) // Use actual amount
+          : 0.1;
+
+        const buyRecord: BuyRecord = {
+          walletAddress: this.bundlerWallets[i].publicKey.toBase58(),
+          tokenAddress: mint.toBase58(),
+          amount: buyAmount * 1000000, // tokens (simplified)
+          solSpent: buyAmount,
+          pricePerToken: buyAmount / (buyAmount * 1000000),
+          timestamp: new Date(),
+          signature
+        };
+
+        this.portfolio.recordBuy(buyRecord);
+
         results.push({
           success: true,
           signature,
@@ -551,5 +577,17 @@ export class Bundler {
 
   getLookupTableAddress(): PublicKey | undefined {
     return this.lookupTableAddress;
+  }
+
+  getPortfolio(): PortfolioTracker {
+    return this.portfolio;
+  }
+
+  getSeller(): Seller {
+    return this.seller;
+  }
+
+  getPumpClient(): PumpFunClient {
+    return this.pumpClient;
   }
 }

@@ -189,8 +189,24 @@ export interface VolumeRandomization {
 }
 
 // ============================================
-// Sell Strategies
+// Sell Strategies & Modes
 // ============================================
+
+export enum SellMode {
+  REGULAR = 'regular',  // Sequential 1-by-1 through RPC
+  BUNDLE = 'bundle',    // Groups of 4 through RPC
+  JITO = 'jito'         // Groups of 20+ through Jito
+}
+
+export interface SellConfig {
+  mode: SellMode;
+  sellPercentage?: number; // 0-100, undefined = sell all
+  slippage: number; // basis points
+  priorityFee: number; // microLamports
+  jitoTipLamports?: number; // tip amount for Jito bundles
+  jitoBundleSize?: number; // default 20
+  delayBetweenSells?: number; // milliseconds
+}
 
 export interface SellStrategy {
   type: SellStrategyType;

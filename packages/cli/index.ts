@@ -5,13 +5,13 @@ import chalk from 'chalk';
 import figlet from 'figlet';
 import inquirer from 'inquirer';
 import ora from 'ora';
-import { Connection } from '@solana/web3.js';
+import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { RPCManager } from '@pump-bundler/core/rpc-manager';
 import { PumpFunClient } from '@pump-bundler/core/pump-fun';
 import { Bundler } from '@pump-bundler/core/bundler';
 import { Sniper } from '@pump-bundler/core/sniper';
 import { VolumeGenerator } from '@pump-bundler/core/volume';
-import { AppConfig, PumpMode } from '@pump-bundler/types';
+import { AppConfig, PumpMode, SellMode } from '@pump-bundler/types';
 import { loadJson, loadKeypairFromString, formatSOL } from '@pump-bundler/utils';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -299,6 +299,217 @@ program
   });
 
 // ============================================
+// Portfolio
+// ============================================
+
+program
+  .command('portfolio')
+  .description('Show portfolio stats and holdings')
+  .action(async () => {
+    const spinner = ora('Loading portfolio...').start();
+
+    try {
+      // Load bundler with wallets
+      const bundler = new Bundler(connection, mainWallet, config.defaultMode);
+
+      // Try to load saved bundler wallets
+      const walletsPath = path.join(process.cwd(), 'keys', 'bundler-wallets.json');
+      if (fs.existsSync(walletsPath)) {
+        const walletsData = JSON.parse(fs.readFileSync(walletsPath, 'utf-8'));
+        const wallets = walletsData.map((k: string) => loadKeypairFromString(k));
+        bundler.getPortfolio().addWallets(wallets);
+      }
+
+      const portfolio = await bundler.getPortfolio().getPortfolio();
+      const holdings = await bundler.getPortfolio().getHoldingsSummary();
+      const stats = bundler.getPortfolio().getStats();
+
+      spinner.stop();
+
+      console.log(chalk.bold.cyan('\n💼 Portfolio Overview\n'));
+
+      // Overall Stats
+      console.log(chalk.bold.white('Overall Performance:'));
+      console.log(chalk.white('  Total Invested:'), chalk.cyan(formatSOL(portfolio.totalInvested * LAMPORTS_PER_SOL) + ' SOL'));
+      console.log(chalk.white('  Current Value:'), chalk.cyan(formatSOL(portfolio.currentValue * LAMPORTS_PER_SOL) + ' SOL'));
+      console.log(chalk.white('  Unrealized PnL:'), portfolio.unrealizedPnL >= 0
+        ? chalk.green(`+${formatSOL(portfolio.unrealizedPnL * LAMPORTS_PER_SOL)} SOL`)
+        : chalk.red(`${formatSOL(portfolio.unrealizedPnL * LAMPORTS_PER_SOL)} SOL`));
+      console.log(chalk.white('  Realized PnL:'), portfolio.realizedPnL >= 0
+        ? chalk.green(`+${formatSOL(portfolio.realizedPnL * LAMPORTS_PER_SOL)} SOL`)
+        : chalk.red(`${formatSOL(portfolio.realizedPnL * LAMPORTS_PER_SOL)} SOL`));
+
+      const totalPnL = portfolio.unrealizedPnL + portfolio.realizedPnL;
+      const pnlPercent = portfolio.totalInvested > 0
+        ? ((totalPnL / portfolio.totalInvested) * 100).toFixed(2)
+        : '0.00';
+      console.log(chalk.white('  Total PnL:'), totalPnL >= 0
+        ? chalk.green(`+${formatSOL(totalPnL * LAMPORTS_PER_SOL)} SOL (${pnlPercent}%)`)
+        : chalk.red(`${formatSOL(totalPnL * LAMPORTS_PER_SOL)} SOL (${pnlPercent}%)`));
+
+      // Holdings Summary
+      console.log(chalk.bold.white('\nHoldings Summary:'));
+      console.log(chalk.white('  Total Wallets:'), chalk.cyan(holdings.totalWallets));
+      console.log(chalk.white('  Wallets w/ Tokens:'), chalk.cyan(holdings.walletsWithTokens));
+      console.log(chalk.white('  Total Tokens:'), chalk.cyan(holdings.totalTokens.toLocaleString()));
+      console.log(chalk.white('  Total Value:'), chalk.cyan(formatSOL(holdings.totalValueSOL * LAMPORTS_PER_SOL) + ' SOL'));
+
+      // Trading Stats
+      console.log(chalk.bold.white('\nTrading Stats:'));
+      console.log(chalk.white('  Total Buys:'), chalk.cyan(stats.totalBuys));
+      console.log(chalk.white('  Total Sells:'), chalk.cyan(stats.totalSells));
+      console.log(chalk.white('  Unique Tokens:'), chalk.cyan(stats.uniqueTokens));
+
+      // Token Holdings
+      if (portfolio.tokens.length > 0) {
+        console.log(chalk.bold.white('\nToken Holdings:\n'));
+
+        for (const token of portfolio.tokens) {
+          console.log(chalk.cyan(`  ${token.tokenStats.symbol}`), chalk.gray(`(${token.tokenAddress.slice(0, 8)}...)`));
+          console.log(chalk.white('    Amount:'), chalk.cyan(token.totalAmount.toLocaleString()));
+          console.log(chalk.white('    Avg Price:'), chalk.cyan(token.averagePrice.toFixed(8) + ' SOL'));
+          console.log(chalk.white('    Current Value:'), chalk.cyan(formatSOL(token.currentValue * LAMPORTS_PER_SOL) + ' SOL'));
+          console.log(chalk.white('    PnL:'), token.unrealizedPnL >= 0
+            ? chalk.green(`+${formatSOL(token.unrealizedPnL * LAMPORTS_PER_SOL)} SOL`)
+            : chalk.red(`${formatSOL(token.unrealizedPnL * LAMPORTS_PER_SOL)} SOL`));
+          console.log(chalk.white('    Wallets:'), chalk.cyan(token.wallets.length));
+          console.log();
+        }
+      }
+
+      console.log();
+    } catch (error) {
+      spinner.fail('Failed to load portfolio');
+      console.error(chalk.red(error));
+    }
+  });
+
+// ============================================
+// Sell Tokens
+// ============================================
+
+program
+  .command('sell')
+  .description('Sell tokens from bundler wallets')
+  .requiredOption('-t, --token <address>', 'Token mint address')
+  .option('-m, --mode <mode>', 'Sell mode: regular, bundle, jito', 'regular')
+  .option('-p, --percentage <number>', 'Percentage to sell (1-100)', '100')
+  .action(async (options) => {
+    console.log(chalk.bold.cyan('\n💰 Sell Tokens\n'));
+
+    // Validate mode
+    const mode = options.mode.toLowerCase() as SellMode;
+    if (!['regular', 'bundle', 'jito'].includes(mode)) {
+      console.log(chalk.red('Invalid sell mode. Use: regular, bundle, or jito\n'));
+      return;
+    }
+
+    // Validate percentage
+    const percentage = parseInt(options.percentage);
+    if (percentage < 1 || percentage > 100) {
+      console.log(chalk.red('Percentage must be between 1 and 100\n'));
+      return;
+    }
+
+    const spinner = ora('Preparing to sell...').start();
+
+    try {
+      const bundler = new Bundler(connection, mainWallet, config.defaultMode);
+      const seller = bundler.getSeller();
+
+      // Load bundler wallets
+      const walletsPath = path.join(process.cwd(), 'keys', 'bundler-wallets.json');
+      if (!fs.existsSync(walletsPath)) {
+        spinner.fail('No bundler wallets found. Create a token first.');
+        return;
+      }
+
+      const walletsData = JSON.parse(fs.readFileSync(walletsPath, 'utf-8'));
+      const wallets = walletsData.map((k: string) => loadKeypairFromString(k));
+
+      const tokenMint = new PublicKey(options.token);
+
+      spinner.text = `Selling ${percentage}% via ${mode} mode...`;
+
+      const result = await seller.sell(tokenMint, wallets, {
+        mode,
+        sellPercentage: percentage,
+        slippage: config.bundleStrategy.slippageProtection,
+        priorityFee: config.bundleStrategy.priorityFee,
+        jitoTipLamports: config.jito.enabled ? config.jito.tipAmount * LAMPORTS_PER_SOL : 10000,
+        jitoBundleSize: 20,
+        delayBetweenSells: 1000
+      });
+
+      spinner.succeed('Sell complete!');
+
+      console.log(chalk.green('\n✅ Sell Results\n'));
+      console.log(chalk.white('Mode:'), chalk.cyan(result.mode));
+      console.log(chalk.white('Successful:'), chalk.green(`${result.successfulSells}/${result.successfulSells + result.failedSells}`));
+      console.log(chalk.white('Total Sold:'), chalk.cyan(result.totalSold.toLocaleString() + ' tokens'));
+      console.log(chalk.white('SOL Received:'), chalk.cyan(formatSOL(result.totalReceived * LAMPORTS_PER_SOL) + ' SOL'));
+      console.log(chalk.white('Total PnL:'), result.totalPnL >= 0
+        ? chalk.green(`+${formatSOL(result.totalPnL * LAMPORTS_PER_SOL)} SOL`)
+        : chalk.red(`${formatSOL(result.totalPnL * LAMPORTS_PER_SOL)} SOL`));
+      console.log(chalk.white('Duration:'), chalk.cyan(`${(result.duration / 1000).toFixed(1)}s\n`));
+
+    } catch (error) {
+      spinner.fail('Sell failed');
+      console.error(chalk.red(error));
+    }
+  });
+
+// ============================================
+// Rent Recovery
+// ============================================
+
+program
+  .command('recover-rent')
+  .description('Close empty token accounts to recover rent')
+  .requiredOption('-t, --tokens <addresses...>', 'Token mint addresses (space separated)')
+  .action(async (options) => {
+    console.log(chalk.bold.cyan('\n💸 Recover Rent from Token Accounts\n'));
+
+    const spinner = ora('Preparing...').start();
+
+    try {
+      const bundler = new Bundler(connection, mainWallet, config.defaultMode);
+      const seller = bundler.getSeller();
+
+      // Load bundler wallets
+      const walletsPath = path.join(process.cwd(), 'keys', 'bundler-wallets.json');
+      if (!fs.existsSync(walletsPath)) {
+        spinner.fail('No bundler wallets found.');
+        return;
+      }
+
+      const walletsData = JSON.parse(fs.readFileSync(walletsPath, 'utf-8'));
+      const wallets = walletsData.map((k: string) => loadKeypairFromString(k));
+
+      const tokenMints = options.tokens.map((addr: string) => new PublicKey(addr));
+
+      spinner.text = 'Closing token accounts...';
+
+      const result = await seller.closeTokenAccounts(
+        wallets,
+        tokenMints,
+        mainWallet.publicKey
+      );
+
+      spinner.succeed('Rent recovery complete!');
+
+      console.log(chalk.green('\n✅ Recovery Results\n'));
+      console.log(chalk.white('Accounts Closed:'), chalk.cyan(result.closed));
+      console.log(chalk.white('Rent Recovered:'), chalk.cyan(formatSOL(result.rentRecovered) + ' SOL'));
+      console.log(chalk.white('USD Value:'), chalk.cyan(`~$${((result.rentRecovered / LAMPORTS_PER_SOL) * 100).toFixed(2)}\n`));
+
+    } catch (error) {
+      spinner.fail('Recovery failed');
+      console.error(chalk.red(error));
+    }
+  });
+
+// ============================================
 // Status
 // ============================================
 
@@ -361,8 +572,13 @@ async function showMenu() {
       message: 'Select an option:',
       choices: [
         { name: '🚀 Create & Bundle Token', value: 'create' },
+        { name: '💼 View Portfolio', value: 'portfolio' },
+        { name: '💰 Sell Tokens', value: 'sell' },
+        { name: '💸 Recover Rent', value: 'recover-rent' },
+        new inquirer.Separator(),
         { name: '🎯 Start Sniper Bot', value: 'snipe' },
         { name: '📈 Generate Volume', value: 'volume' },
+        new inquirer.Separator(),
         { name: '📡 Manage RPCs', value: 'rpc' },
         { name: '📊 Show Status', value: 'status' },
         new inquirer.Separator(),
