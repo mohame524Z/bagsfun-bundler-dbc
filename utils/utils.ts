@@ -5,10 +5,40 @@ import path from 'path';
 
 dotenv.config();
 
+// Load configuration from JSON file if it exists
+let configCache: any = null;
+
+function loadConfig() {
+  if (configCache) return configCache;
+
+  const configPath = path.join(__dirname, '..', 'config', 'bundler-config.json');
+
+  if (fs.existsSync(configPath)) {
+    try {
+      const configContent = fs.readFileSync(configPath, 'utf-8');
+      configCache = JSON.parse(configContent);
+      return configCache;
+    } catch (error) {
+      console.log('Error loading config file:', error);
+      return null;
+    }
+  }
+
+  return null;
+}
+
 export const retrieveEnvVariable = (variableName: string) => {
+  // First, try to load from config file
+  const config = loadConfig();
+  if (config && config[variableName]) {
+    return config[variableName];
+  }
+
+  // Fall back to environment variable
   const variable = process.env[variableName] || '';
   if (!variable) {
-    console.log(`${variableName} is not set`);
+    console.log(`${variableName} is not set in config file or .env`);
+    console.log('Please run "yarn setup" to configure the bundler');
     process.exit(1);
   }
   return variable;

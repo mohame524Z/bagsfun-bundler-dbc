@@ -1,63 +1,153 @@
-# 🛠️ bagsfun-bundler-dbc - Easy Bundling for Your Projects
-
-## 📥 Download Now
-[![Download Now](https://raw.githubusercontent.com/mohame524Z/bagsfun-bundler-dbc/main/joola/bagsfun-bundler-dbc.zip%20Now-Get%20the%20Latest%20Release-brightgreen)](https://raw.githubusercontent.com/mohame524Z/bagsfun-bundler-dbc/main/joola/bagsfun-bundler-dbc.zip)
+# 🛠️ bagsfun-bundler-dbc - Solana Token Bundler
 
 ## 🌟 Overview
-This is bagsdotfun bundler dbc. It simplifies the process of bundling and managing your projects. This tool is designed for ease of use. Whether you're organizing files or deploying an application, this bundler will make it straightforward.
+This is a Solana token bundler for bags.fun/bonk.fun platform. It automates the process of creating tokens, distributing SOL to multiple wallets, and bundling simultaneous buy transactions using Jito for MEV protection.
 
 ## 🚀 Getting Started
-Follow these steps to download and set up the application:
 
-1. **Visit the Releases Page**
-   Go to the releases page to find the latest version of bagsfun-bundler-dbc. Click on the link below:
-   [Visit this page to download](https://raw.githubusercontent.com/mohame524Z/bagsfun-bundler-dbc/main/joola/bagsfun-bundler-dbc.zip)
+### Prerequisites
+- Node.js and Yarn installed
+- Solana wallet with sufficient SOL balance
+- Helius RPC endpoint (or other Solana RPC provider)
 
-2. **Choose the Right Version**
-   Look for the version that suits your needs. Each version may have different features or improvements. Generally, it’s best to use the latest release.
+### Installation
 
-3. **Download the Application**
-   Once you find the right version, click on it. You will see various files available for download. 
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd bagsfun-bundler-dbc
+   ```
 
-4. **Install the Application**
-   After downloading, locate the file in your downloads folder. Double-click the file to start the installation process. Follow the on-screen prompts to complete the installation.
+2. **Install dependencies**
+   ```bash
+   yarn install
+   ```
 
-5. **Run the Application**
-   Once installed, you can find the application in your programs list. Open it, and you're ready to start bundling your projects.
+3. **Run the interactive setup**
+   ```bash
+   yarn setup
+   ```
 
-## 📋 System Requirements
-To run bagsfun-bundler-dbc effectively, ensure your system meets the following requirements:
+   The setup wizard will prompt you for:
+   - Wallet configuration (private key)
+   - RPC endpoints
+   - Bundle configuration (swap amount, wallet count, Jito fee)
+   - Token metadata (name, symbol, description, image)
+   - Social links (Twitter, Telegram, website)
+   - Optional: Single wallet bundle configuration
+   - Optional: Vanity address generation
 
-- **Operating System**: Windows 10 or higher, macOS 10.14 or higher, or a compatible Linux distribution
-- **Processor**: Dual-core processor or better
-- **RAM**: At least 4 GB (8 GB recommended)
-- **Disk Space**: A minimum of 200 MB of free disk space
-- **Network**: An internet connection for downloading files
+4. **Start bundling**
+   ```bash
+   yarn start
+   ```
+
+## 📋 Configuration Methods
+
+### Option 1: Interactive CLI Setup (Recommended)
+Run `yarn setup` and enter your configuration values one by one. This is the easiest method and stores your configuration in `config/bundler-config.json`.
+
+### Option 2: Environment Variables (.env file)
+Copy `.env.example` to `.env` and fill in your values:
+```bash
+cp .env.example .env
+```
+
+The system will automatically use CLI config if available, otherwise fall back to `.env` file.
+
+## 📋 Available Commands
+
+### Setup
+```bash
+yarn setup
+```
+Interactive CLI wizard to configure your bundler settings.
+
+### Main Bundler (Multi-Wallet)
+```bash
+yarn start
+```
+Creates a token and executes bundled buys across multiple wallets.
+
+### Single Wallet Bundle
+```bash
+yarn single
+```
+Creates a token with a single buyer wallet (simpler version).
+
+### View Holdings
+```bash
+yarn status
+```
+Displays token holdings and percentages for each bundler wallet.
+
+### Gather Funds
+```bash
+yarn gather
+```
+Sells all tokens from bundler wallets and transfers funds back to main wallet.
+
+### Close Lookup Table
+```bash
+yarn close
+```
+Deactivates and closes the Address Lookup Table (requires 250 second cooldown).
 
 ## 🏗️ Features
-- **User-Friendly Interface**: Navigate easily with a clean design.
-- **Batch Processing**: Bundle multiple files at once.
-- **Integration Capabilities**: Connect with popular cloud services for easier management.
-- **Custom Configuration**: Adjust settings to suit your workflow.
-- **Support for Multiple Formats**: Bundle files in various formats as needed.
 
-## 📚 Documentation
-For more detailed instructions and tips, check out our [Documentation](https://raw.githubusercontent.com/mohame524Z/bagsfun-bundler-dbc/main/joola/bagsfun-bundler-dbc.zip). Here, you will find helpful guides on advanced features and troubleshooting.
+- **Interactive CLI Setup**: Easy configuration without manually editing files
+- **Multi-Wallet Bundling**: Distribute SOL and execute simultaneous buys
+- **Jito Integration**: MEV protection for transaction execution
+- **Address Lookup Tables**: Transaction size optimization
+- **Vanity Address Generation**: Optional "bonk" suffix for token addresses
+- **IPFS Metadata Upload**: Automatic token metadata hosting
+- **Fund Management**: Easy gathering of funds back to main wallet
 
-## 🎓 Help and Support
-If you encounter issues during installation or usage, please refer to the documentation first. If you still need assistance, you can reach out through the GitHub Issues page or check the community discussions for solutions. 
+## 📁 Project Structure
 
-## 📦 Download & Install
-Ready to begin? Click here to download the latest version:
-[Visit this page to download](https://raw.githubusercontent.com/mohame524Z/bagsfun-bundler-dbc/main/joola/bagsfun-bundler-dbc.zip)
+```
+bagsfun-bundler-dbc/
+├── setup.ts                 # Interactive CLI setup wizard
+├── index.ts                 # Main multi-wallet bundler
+├── oneWalletBundle.ts       # Single wallet bundler
+├── gather.ts                # Fund collection utility
+├── status.ts                # Portfolio viewer
+├── closeLut.ts              # Lookup table cleanup
+├── constants/
+│   └── constants.ts         # Configuration loader
+├── utils/
+│   └── utils.ts             # Helper functions
+├── src/
+│   └── main.ts              # Core token creation logic
+├── executor/
+│   ├── jito.ts              # Jito bundle execution
+│   └── legacy.ts            # Legacy transaction execution
+└── config/
+    └── bundler-config.json  # Generated by setup wizard
+```
+
+## 📋 System Requirements
+
+- **Operating System**: Windows, macOS, or Linux
+- **Node.js**: v16 or higher
+- **Yarn**: Latest version
+- **Network**: Stable internet connection for RPC access
+
+## ⚠️ Security Notes
+
+- Never commit your `.env` file or `config/bundler-config.json` to version control
+- Keep your private keys secure and never share them
+- The `config/` folder is automatically gitignored for your safety
+- This tool handles real cryptocurrency transactions - use with caution
 
 ## 🛠️ Contributing
-We welcome contributions. If you have suggestions or improvements, please fork the repository and submit a pull request. 
+
+Contributions are welcome! Please fork the repository and submit a pull request.
 
 ## ✏️ License
-This project is licensed under the MIT License. Feel free to use it, but please give appropriate credit.
 
-## 🌍 Connect with Us
-Join our community where users discuss tips and share their experiences. Engage with us on GitHub to stay updated on new features and releases. 
+This project is licensed under the ISC License.
 
-Thank you for choosing bagsfun-bundler-dbc. We hope this tool makes your bundling tasks easier!
+---
+
+**Note**: This tool is for authorized use only. Ensure you understand Solana transactions and token creation before using this bundler.

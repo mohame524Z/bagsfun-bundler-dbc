@@ -2,6 +2,7 @@
   "name": "bagsfun-bundler",
   "author": "0xTan1319",
   "scripts": {
+    "setup": "ts-node setup.ts",
     "start": "ts-node index.ts",
     "single": "ts-node oneWalletBundle.ts",
     "close": "ts-node closeLut.ts",

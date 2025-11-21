@@ -141,3 +141,4 @@ pnpm-lock.yaml
 data.json
 keys/*
 keys*
+config/
