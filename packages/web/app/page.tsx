@@ -4,11 +4,11 @@ import { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { PumpMode } from '@pump-bundler/types';
-import Dashboard from '@/components/Dashboard';
-import TokenCreator from '@/components/TokenCreator';
-import SniperPanel from '@/components/SniperPanel';
-import VolumePanel from '@/components/VolumePanel';
-import RPCManager from '@/components/RPCManager';
+import Dashboard from '../components/Dashboard';
+import TokenCreator from '../components/TokenCreator';
+import SniperPanel from '../components/SniperPanel';
+import VolumePanel from '../components/VolumePanel';
+import RPCManager from '../components/RPCManager';
 
 export default function Home() {
   const { connected } = useWallet();
