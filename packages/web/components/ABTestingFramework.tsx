@@ -47,7 +47,42 @@ export default function ABTestingFramework() {
       const response = await fetch('/api/abtests?action=list');
       const data = await response.json();
       if (response.ok && data.tests) {
-        setTests(data.tests);
+        // Transform API's variantA/variantB structure to variants[] array
+        const transformedTests = data.tests.map((test: any) => ({
+          id: test.id,
+          name: test.name,
+          status: test.status,
+          startDate: test.startedAt || test.createdAt,
+          endDate: test.completedAt,
+          variants: [
+            {
+              id: 'A',
+              name: test.variantA.name,
+              config: test.variantA.config,
+              performance: {
+                trials: test.variantA.results.trials,
+                successRate: test.variantA.results.successRate,
+                avgConfirmTime: test.variantA.results.avgGasUsed,
+                totalCost: test.variantA.results.totalProfit,
+                detectionEvents: 0,
+              },
+            },
+            {
+              id: 'B',
+              name: test.variantB.name,
+              config: test.variantB.config,
+              performance: {
+                trials: test.variantB.results.trials,
+                successRate: test.variantB.results.successRate,
+                avgConfirmTime: test.variantB.results.avgGasUsed,
+                totalCost: test.variantB.results.totalProfit,
+                detectionEvents: 0,
+              },
+            },
+          ],
+          winner: test.winner,
+        }));
+        setTests(transformedTests);
       }
     } catch (err) {
       console.error('Failed to load A/B tests');
@@ -61,7 +96,7 @@ export default function ABTestingFramework() {
       await fetch('/api/abtests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'start', id }),
+        body: JSON.stringify({ action: 'start', testId: id }),
       });
 
       setTests(tests.map(t => t.id === id ? { ...t, status: 'running' } : t));
@@ -76,7 +111,7 @@ export default function ABTestingFramework() {
       await fetch('/api/abtests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'pause', id }),
+        body: JSON.stringify({ action: 'pause', testId: id }),
       });
 
       setTests(tests.map(t => t.id === id ? { ...t, status: 'paused' } : t));
@@ -93,7 +128,7 @@ export default function ABTestingFramework() {
       const response = await fetch('/api/abtests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'complete', id }),
+        body: JSON.stringify({ action: 'complete', testId: id }),
       });
 
       const data = await response.json();
