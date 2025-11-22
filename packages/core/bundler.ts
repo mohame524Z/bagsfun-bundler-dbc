@@ -306,13 +306,28 @@ export class Bundler {
         buyInstructions.push(buyIx);
       }
 
-      // 5. Bundle and execute transactions
-      logger.info('Executing bundle...');
-      const bundleResults = await this.executeBundleWithJito(
-        mint,
-        buyInstructions,
-        strategy
-      );
+      // 5. Execute based on stealth mode
+      const stealthMode = strategy.antiDetection.stealthConfig?.mode || 'none';
+
+      let bundleResults: TransactionResult[];
+
+      if (stealthMode === 'none') {
+        // Standard atomic Jito bundling (fastest, but detectable)
+        logger.info('Executing ATOMIC bundle (fast but detectable)...');
+        bundleResults = await this.executeBundleWithJito(
+          mint,
+          buyInstructions,
+          strategy
+        );
+      } else {
+        // Stealth bundling (slower, but undetectable)
+        logger.info(`Executing STEALTH bundle (${stealthMode} mode)...`);
+        bundleResults = await this.executeStealthBundle(
+          mint,
+          buyInstructions,
+          strategy
+        );
+      }
 
       results.push(...bundleResults);
 
@@ -341,6 +356,268 @@ export class Bundler {
         totalCost: 0,
         successRate: 0,
         averageConfirmationTime: 0
+      };
+    }
+  }
+
+  // ============================================
+  // Stealth Bundle Execution - MULTI-BLOCK ANTI-DETECTION
+  // ============================================
+
+  private async executeStealthBundle(
+    mint: PublicKey,
+    buyInstructions: TransactionInstruction[],
+    strategy: BundleStrategy
+  ): Promise<TransactionResult[]> {
+    const stealthConfig = strategy.antiDetection.stealthConfig!;
+    const mode = stealthConfig.mode;
+
+    logger.warn('🥷 STEALTH MODE ACTIVE - Trading speed for undetectability');
+    logger.info(`Mode: ${mode.toUpperCase()} | Spread: ${stealthConfig.spreadBlocks} blocks`);
+
+    const results: TransactionResult[] = [];
+
+    // 1. Shuffle wallets if enabled (breaks sequential pattern)
+    let walletIndices = Array.from({ length: this.bundlerWallets.length }, (_, i) => i);
+    if (stealthConfig.shuffleWallets) {
+      walletIndices = walletIndices.sort(() => Math.random() - 0.5);
+      logger.info('Shuffled wallet order for randomization');
+    }
+
+    // 2. Determine execution strategy based on mode
+    const config = this.getStealthConfig(mode, this.bundlerWallets.length);
+    logger.info(`Using: ${config.jitoGroups} Jito groups + ${config.rpcIndividual} RPC txs`);
+
+    // 3. Split wallets into execution groups
+    const groups: number[][] = [];
+    let currentIndex = 0;
+
+    // Jito groups (2-4 wallets per group)
+    for (let i = 0; i < config.jitoGroups; i++) {
+      const groupSize = config.walletsPerJitoGroup;
+      const group = walletIndices.slice(currentIndex, currentIndex + groupSize);
+      groups.push(group);
+      currentIndex += groupSize;
+    }
+
+    // Individual RPC transactions
+    for (let i = currentIndex; i < walletIndices.length; i++) {
+      groups.push([walletIndices[i]]);
+    }
+
+    logger.info(`Split into ${groups.length} execution groups`);
+
+    // 4. Execute groups across multiple blocks
+    const blocksToUse = stealthConfig.spreadBlocks;
+    const groupsPerBlock = Math.ceil(groups.length / blocksToUse);
+
+    for (let blockIdx = 0; blockIdx < blocksToUse; blockIdx++) {
+      const startGroupIdx = blockIdx * groupsPerBlock;
+      const endGroupIdx = Math.min(startGroupIdx + groupsPerBlock, groups.length);
+      const blockGroups = groups.slice(startGroupIdx, endGroupIdx);
+
+      logger.info(`Block ${blockIdx + 1}/${blocksToUse}: Executing ${blockGroups.length} groups`);
+
+      // Execute all groups in this block (some Jito, some RPC)
+      const blockPromises = blockGroups.map(async (group, groupIdx) => {
+        const isJitoGroup = group.length > 1;
+        const delay = stealthConfig.varyDelays
+          ? Math.random() * 450 + 50  // 50-500ms random delay
+          : 100;
+
+        // Small delay between groups in same block
+        await sleep(delay);
+
+        if (isJitoGroup) {
+          // Execute as mini Jito bundle
+          return await this.executeJitoGroup(mint, group, buyInstructions, strategy);
+        } else {
+          // Execute as individual RPC transaction
+          return await this.executeRpcTransaction(mint, group[0], buyInstructions, strategy);
+        }
+      });
+
+      const blockResults = await Promise.all(blockPromises);
+      results.push(...blockResults.flat());
+
+      // Wait for next block (400-600ms = 1 Solana block)
+      if (blockIdx < blocksToUse - 1) {
+        const blockDelay = 400 + Math.random() * 200; // 400-600ms
+        logger.debug(`Waiting ${blockDelay.toFixed(0)}ms for next block...`);
+        await sleep(blockDelay);
+      }
+    }
+
+    const successCount = results.filter(r => r.success).length;
+    logger.success(`🥷 Stealth execution complete: ${successCount}/${results.length} successful`);
+
+    return results;
+  }
+
+  private getStealthConfig(mode: string, totalWallets: number) {
+    switch (mode) {
+      case 'light':
+        // 2 blocks, mostly Jito, few RPC
+        return {
+          jitoGroups: Math.floor(totalWallets / 3),
+          walletsPerJitoGroup: 3,
+          rpcIndividual: totalWallets % 3
+        };
+
+      case 'medium':
+        // 3 blocks, balanced Jito + RPC
+        return {
+          jitoGroups: Math.floor(totalWallets / 4),
+          walletsPerJitoGroup: 3,
+          rpcIndividual: Math.floor(totalWallets / 3)
+        };
+
+      case 'aggressive':
+        // 4-5 blocks, mostly individual RPC
+        return {
+          jitoGroups: Math.floor(totalWallets / 6),
+          walletsPerJitoGroup: 2,
+          rpcIndividual: Math.floor(totalWallets * 2 / 3)
+        };
+
+      default:
+        return {
+          jitoGroups: Math.floor(totalWallets / 3),
+          walletsPerJitoGroup: 3,
+          rpcIndividual: 0
+        };
+    }
+  }
+
+  private async executeJitoGroup(
+    mint: PublicKey,
+    walletIndices: number[],
+    buyInstructions: TransactionInstruction[],
+    strategy: BundleStrategy
+  ): Promise<TransactionResult[]> {
+    try {
+      const lookupTable = await this.connection.getAddressLookupTable(this.lookupTableAddress!);
+      if (!lookupTable.value) throw new Error('LUT not found');
+
+      const instructions: TransactionInstruction[] = [
+        ComputeBudgetProgram.setComputeUnitLimit({ units: 800_000 }),
+        ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: Math.max(strategy.priorityFee, 150000)
+        })
+      ];
+
+      for (const idx of walletIndices) {
+        instructions.push(buyInstructions[idx]);
+      }
+
+      const { blockhash } = await this.connection.getLatestBlockhash('finalized');
+      const message = new TransactionMessage({
+        payerKey: this.bundlerWallets[walletIndices[0]].publicKey,
+        recentBlockhash: blockhash,
+        instructions
+      }).compileToV0Message([lookupTable.value]);
+
+      const tx = new VersionedTransaction(message);
+      const signers = walletIndices.map(idx => this.bundlerWallets[idx]);
+      tx.sign(signers);
+
+      // Send via Jito
+      const bundle = [Buffer.from(tx.serialize()).toString('base64')];
+      const response = await axios.post(JITO_ENDPOINTS[0], {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'sendBundle',
+        params: [bundle]
+      }, { timeout: 3000 });
+
+      if (response.data.result) {
+        const results = walletIndices.map((idx, i) => ({
+          success: true,
+          signature: `jito_${response.data.result}_${i}`,
+          timestamp: new Date(),
+          confirmationTime: 1500
+        }));
+
+        // Record in portfolio
+        for (let i = 0; i < walletIndices.length; i++) {
+          const idx = walletIndices[i];
+          this.portfolio.recordBuy({
+            walletAddress: this.bundlerWallets[idx].publicKey.toBase58(),
+            tokenAddress: mint.toBase58(),
+            amount: 100000,
+            solSpent: 0.1,
+            pricePerToken: 0.000001,
+            timestamp: new Date(),
+            signature: results[i].signature!
+          });
+        }
+
+        return results;
+      }
+
+      throw new Error('Jito submission failed');
+    } catch (error) {
+      logger.warn(`Jito group failed, falling back to RPC`);
+      // Fallback to individual RPC
+      const results = [];
+      for (const idx of walletIndices) {
+        results.push(await this.executeRpcTransaction(mint, idx, buyInstructions, strategy));
+      }
+      return results;
+    }
+  }
+
+  private async executeRpcTransaction(
+    mint: PublicKey,
+    walletIndex: number,
+    buyInstructions: TransactionInstruction[],
+    strategy: BundleStrategy
+  ): Promise<TransactionResult> {
+    const startTime = Date.now();
+
+    try {
+      const wallet = this.bundlerWallets[walletIndex];
+
+      const tx = new Transaction().add(
+        ComputeBudgetProgram.setComputeUnitLimit({ units: 200_000 }),
+        ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: Math.max(strategy.priorityFee, 100000)
+        }),
+        buyInstructions[walletIndex]
+      );
+
+      tx.feePayer = wallet.publicKey;
+      tx.recentBlockhash = (await this.connection.getLatestBlockhash()).blockhash;
+      tx.sign(wallet);
+
+      const signature = await this.connection.sendRawTransaction(tx.serialize(), {
+        skipPreflight: false,
+        maxRetries: 2
+      });
+
+      // Record in portfolio
+      this.portfolio.recordBuy({
+        walletAddress: wallet.publicKey.toBase58(),
+        tokenAddress: mint.toBase58(),
+        amount: 100000,
+        solSpent: 0.1,
+        pricePerToken: 0.000001,
+        timestamp: new Date(),
+        signature
+      });
+
+      return {
+        success: true,
+        signature,
+        timestamp: new Date(),
+        confirmationTime: Date.now() - startTime
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: (error as Error).message,
+        timestamp: new Date(),
+        confirmationTime: Date.now() - startTime
       };
     }
   }

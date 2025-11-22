@@ -89,6 +89,25 @@ export interface TimingConfig {
   randomize: boolean;
 }
 
+export enum StealthMode {
+  NONE = 'none',           // Atomic Jito (fastest, detectable)
+  LIGHT = 'light',         // 2-block spread (fast, harder to detect)
+  MEDIUM = 'medium',       // 3-block spread + randomization (balanced)
+  AGGRESSIVE = 'aggressive' // 4-5 block spread + full stealth (slowest, undetectable)
+}
+
+export interface StealthConfig {
+  mode: StealthMode;
+  spreadBlocks: number;           // Number of blocks to spread across
+  shuffleWallets: boolean;        // Randomize wallet order
+  mixedExecution: boolean;        // Mix Jito + RPC transactions
+  varyDelays: boolean;           // Random 50-500ms delays
+  aggressiveVariance: boolean;   // 15-25% amount variance (vs 5-10%)
+  simulatePostLaunch: boolean;   // Random activity after launch
+  useAgedWallets: boolean;       // Prefer wallets with history
+  multiRpcRouting: boolean;      // Different RPC per wallet
+}
+
 export interface AntiDetectionConfig {
   randomizeAmounts: boolean;
   amountVariance: number; // percentage 0-100
@@ -96,6 +115,7 @@ export interface AntiDetectionConfig {
   timingVariance: number; // milliseconds
   varyComputeBudget: boolean;
   useMultipleRPCs: boolean;
+  stealthConfig?: StealthConfig; // Advanced stealth options
 }
 
 // ============================================

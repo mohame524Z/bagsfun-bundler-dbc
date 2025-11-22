@@ -216,6 +216,86 @@ async function setup() {
     }
   ]);
 
+  // ============================================
+  // Stealth Mode Configuration
+  // ============================================
+
+  console.log(chalk.bold.cyan('\n🥷 Stealth Mode Configuration\n'));
+  console.log(chalk.gray('Avoid detection by bubble maps and blockchain explorers\n'));
+
+  const stealthAnswers = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'stealthMode',
+      message: 'Stealth mode (balance speed vs detectability):',
+      choices: [
+        {
+          name: 'NONE - Atomic Jito (fastest, 1 block, detectable)',
+          value: 'none'
+        },
+        {
+          name: 'LIGHT - 2-block spread (fast, harder to detect)',
+          value: 'light'
+        },
+        {
+          name: 'MEDIUM - 3-block spread + randomization (balanced) [Recommended]',
+          value: 'medium'
+        },
+        {
+          name: 'AGGRESSIVE - 4-5 block spread (slowest, nearly undetectable)',
+          value: 'aggressive'
+        }
+      ],
+      default: 'medium'
+    },
+    {
+      type: 'confirm',
+      name: 'shuffleWallets',
+      message: 'Shuffle wallet order?',
+      default: true,
+      when: (answers) => answers.stealthMode !== 'none'
+    },
+    {
+      type: 'confirm',
+      name: 'mixedExecution',
+      message: 'Mix Jito + RPC transactions?',
+      default: true,
+      when: (answers) => answers.stealthMode !== 'none'
+    },
+    {
+      type: 'confirm',
+      name: 'varyDelays',
+      message: 'Add random 50-500ms delays?',
+      default: true,
+      when: (answers) => answers.stealthMode !== 'none'
+    }
+  ]);
+
+  let stealthConfig = undefined;
+
+  if (stealthAnswers.stealthMode !== 'none') {
+    const spreadBlocks = {
+      light: 2,
+      medium: 3,
+      aggressive: 5
+    }[stealthAnswers.stealthMode] || 3;
+
+    stealthConfig = {
+      mode: stealthAnswers.stealthMode,
+      spreadBlocks,
+      shuffleWallets: stealthAnswers.shuffleWallets !== false,
+      mixedExecution: stealthAnswers.mixedExecution !== false,
+      varyDelays: stealthAnswers.varyDelays !== false,
+      aggressiveVariance: stealthAnswers.stealthMode === 'aggressive',
+      simulatePostLaunch: false,
+      useAgedWallets: false,
+      multiRpcRouting: false
+    };
+
+    console.log(chalk.yellow('\n⚠️  Note: Stealth mode trades speed for undetectability'));
+    console.log(chalk.gray(`Execution time: ${stealthAnswers.stealthMode === 'light' ? '2-3s' : stealthAnswers.stealthMode === 'medium' ? '3-4s' : '5-6s'}`));
+  }
+
   config.bundleStrategy = {
     walletCount: walletAnswers.bundlerWalletCount,
     distribution: strategyAnswers.distribution,
@@ -230,7 +310,8 @@ async function setup() {
       randomizeTimings: true,
       timingVariance: 500,
       varyComputeBudget: true,
-      useMultipleRPCs: false
+      useMultipleRPCs: false,
+      stealthConfig
     },
     slippageProtection: strategyAnswers.slippageProtection,
     priorityFee: strategyAnswers.priorityFee
