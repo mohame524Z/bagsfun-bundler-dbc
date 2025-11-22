@@ -550,7 +550,8 @@ async function setup() {
 
   console.log(chalk.bold.cyan('\n💾 Saving Configuration\n'));
 
-  const configPath = path.join(process.cwd(), 'config', 'bundler-config.json');
+  // Save to project root config directory (not CLI package directory)
+  const configPath = path.join(process.cwd(), '..', '..', 'config', 'bundler-config.json');
 
   try {
     saveJson(configPath, config);

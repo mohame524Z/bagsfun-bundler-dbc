@@ -18,8 +18,8 @@ import * as fs from 'fs';
 
 const program = new Command();
 
-// Load config
-const configPath = path.join(process.cwd(), 'config', 'bundler-config.json');
+// Load config from project root (not CLI package directory)
+const configPath = path.join(process.cwd(), '..', '..', 'config', 'bundler-config.json');
 let config: AppConfig;
 
 try {
