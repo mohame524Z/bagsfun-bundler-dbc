@@ -278,12 +278,13 @@ async function setup() {
   let stealthConfig = undefined;
 
   if (stealthAnswers.stealthMode !== 'none') {
-    const spreadBlocks = {
+    const spreadBlocksMap: Record<string, number> = {
       hybrid: 3,
       light: 2,
       medium: 3,
       aggressive: 5
-    }[stealthAnswers.stealthMode] || 3;
+    };
+    const spreadBlocks = spreadBlocksMap[stealthAnswers.stealthMode as string] || 3;
 
     stealthConfig = {
       mode: stealthAnswers.stealthMode,
