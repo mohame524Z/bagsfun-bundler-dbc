@@ -71,48 +71,47 @@ export default function AITokenNameGenerator() {
     ],
   };
 
-  const generateNames = () => {
+  const generateNames = async () => {
     setLoading(true);
     setSuggestions([]);
 
-    setTimeout(() => {
-      const templates = nameTemplates[category as keyof typeof nameTemplates] || nameTemplates.meme;
+    try {
+      const response = await fetch('/api/namegen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          theme: category !== 'random' ? category : undefined,
+          count: 5,
+        }),
+      });
 
-      // Add theme-based variations if theme is provided
-      let results = [...templates];
+      const data = await response.json();
 
-      if (theme.trim()) {
-        const themeWords = theme.trim().split(' ');
-        const customSuggestions = [
-          {
-            name: `${theme} Protocol`,
-            symbol: theme.substring(0, 5).toUpperCase(),
-            desc: `Revolutionary ${theme.toLowerCase()} powered ecosystem`,
-          },
-          {
-            name: `${theme} Finance`,
-            symbol: `${theme.substring(0, 4).toUpperCase()}FI`,
-            desc: `Decentralized ${theme.toLowerCase()} financial platform`,
-          },
-          {
-            name: `Mega ${theme}`,
-            symbol: `MEGA${theme.substring(0, 2).toUpperCase()}`,
-            desc: `The ultimate ${theme.toLowerCase()} experience`,
-          },
-        ];
-        results = [...customSuggestions, ...results].slice(0, 8);
+      if (data.success && data.suggestions) {
+        // Map API response to UI format
+        const templates = nameTemplates[category as keyof typeof nameTemplates] || nameTemplates.meme;
+        const scored = data.suggestions.map((suggestion: any, index: number) => {
+          const template = templates[index] || templates[0];
+          return {
+            name: theme.trim() ? `${theme} ${suggestion.name}` : suggestion.name,
+            symbol: suggestion.name.substring(0, 5).toUpperCase().replace(/[^A-Z]/g, ''),
+            description: template?.desc || `Amazing ${suggestion.name} token`,
+            memePotential: suggestion.score,
+            viralScore: Math.min(100, suggestion.score + 10),
+            category,
+          };
+        });
+
+        setSuggestions(scored);
+      } else {
+        alert('Failed to generate names');
       }
-
-      const scored = results.map(token => ({
-        ...token,
-        memePotential: Math.floor(Math.random() * 30) + 70,
-        viralScore: Math.floor(Math.random() * 40) + 60,
-        category,
-      }));
-
-      setSuggestions(scored);
+    } catch (error) {
+      console.error('Error generating names:', error);
+      alert('Error generating names');
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   const getScoreColor = (score: number) => {

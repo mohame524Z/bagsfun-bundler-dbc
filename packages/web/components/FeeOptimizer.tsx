@@ -43,41 +43,18 @@ export default function FeeOptimizer() {
     setLoading(true);
     setError(null);
     try {
-      // Simulate fee data (in production, fetch from API)
-      const mockData: FeeRecommendation = {
-        bestTime: {
-          hour: 3,
-          label: '3:00 AM - 5:00 AM UTC',
-          savingsPercent: 45,
-        },
-        currentFees: {
-          baseFee: 0.000005,
-          priorityFee: 0.0002,
-          jitoTip: useJito ? 0.005 : 0,
-          total: useJito ? 0.005205 * selectedBundleSize : 0.000205 * selectedBundleSize,
-        },
-        optimalFees: {
-          baseFee: 0.000005,
-          priorityFee: 0.00008,
-          jitoTip: useJito ? 0.003 : 0,
-          total: useJito ? 0.003085 * selectedBundleSize : 0.000085 * selectedBundleSize,
-          savings: useJito ? 0.00212 * selectedBundleSize : 0.00012 * selectedBundleSize,
-        },
-        trends: Array.from({ length: 24 }, (_, i) => {
-          const baseAvg = 0.0002;
-          const variance = Math.sin((i - 12) / 12 * Math.PI) * 0.0001;
-          const avgFee = baseAvg + variance;
-          return {
-            hour: i,
-            avgFee,
-            congestion: avgFee > 0.00025 ? 'high' : avgFee > 0.00015 ? 'medium' : 'low',
-          };
-        }),
-      };
-
-      setRecommendation(mockData);
+      const params = new URLSearchParams({
+        bundleSize: selectedBundleSize.toString(),
+        useJito: useJito.toString(),
+      });
+      const response = await fetch(`/api/fees?${params}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data: FeeRecommendation = await response.json();
+      setRecommendation(data);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Failed to load fee recommendations');
     } finally {
       setLoading(false);
     }

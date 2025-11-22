@@ -58,18 +58,14 @@ export default function AchievementSystem() {
   const loadAchievements = async () => {
     setLoading(true);
     try {
-      // In production, load from API
-      // For now, use mock data
-      const mockAchievements: Achievement[] = ACHIEVEMENTS.map(a => ({
-        ...a,
-        unlocked: Math.random() > 0.6,
-        unlockedAt: Math.random() > 0.6 ? Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000 : undefined,
-        progress: Math.floor(Math.random() * a.maxProgress),
-      }));
-
-      setAchievements(mockAchievements);
+      const response = await fetch('/api/achievements');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data: Achievement[] = await response.json();
+      setAchievements(data);
     } catch (err) {
-      console.error('Failed to load achievements');
+      console.error('Failed to load achievements:', err);
     } finally {
       setLoading(false);
     }
