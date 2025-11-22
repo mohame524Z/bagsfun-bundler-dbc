@@ -122,6 +122,75 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: true, wallets: walletInfos });
       }
 
+      case 'health': {
+        const bundleWallets = config.wallet?.bundleWallets || [];
+
+        // Get health info for all wallets
+        const walletHealthInfos = await Promise.all(
+          bundleWallets.map(async (pk) => {
+            const info = await getWalletInfo(connection, pk);
+
+            // Calculate health metrics
+            const now = Date.now();
+            const transactionCount24h = Math.floor(Math.random() * 20); // Mock - would track real tx count
+            const lastActivity = now - Math.floor(Math.random() * 86400000); // Mock last activity
+
+            // Calculate health score (0-100)
+            let healthScore = 100;
+            if (info.solBalance < 0.001) healthScore -= 40;
+            else if (info.solBalance < 0.01) healthScore -= 20;
+
+            if (transactionCount24h > 15) healthScore -= 30;
+            else if (transactionCount24h > 10) healthScore -= 15;
+
+            if (now - lastActivity < 3600000) healthScore -= 10; // Active in last hour
+
+            healthScore = Math.max(0, healthScore);
+
+            // Determine status
+            let status: 'healthy' | 'warning' | 'critical' | 'inactive' = 'healthy';
+            if (healthScore < 40) status = 'critical';
+            else if (healthScore < 60) status = 'warning';
+            else if (now - lastActivity > 86400000 * 7) status = 'inactive';
+
+            // Determine heat level
+            let heatLevel: 'cold' | 'warm' | 'hot' = 'cold';
+            if (transactionCount24h > 10) heatLevel = 'hot';
+            else if (transactionCount24h > 5) heatLevel = 'warm';
+
+            // Identify issues
+            const issues: string[] = [];
+            if (info.solBalance < 0.001) issues.push('Very low SOL balance');
+            if (transactionCount24h > 15) issues.push('Excessive transaction activity');
+            if (heatLevel === 'hot') issues.push('High heat level detected');
+
+            // Generate recommendations
+            const recommendations: string[] = [];
+            if (info.solBalance < 0.01) recommendations.push('Fund wallet with SOL');
+            if (heatLevel === 'hot') recommendations.push('Consider rotating this wallet');
+            if (status === 'inactive') recommendations.push('Wallet has been inactive - verify functionality');
+
+            const rotationRecommended = heatLevel === 'hot' || transactionCount24h > 12;
+
+            return {
+              address: info.address,
+              solBalance: info.solBalance,
+              tokenCount: info.tokenCount,
+              transactionCount24h,
+              lastActivity,
+              healthScore,
+              status,
+              issues,
+              recommendations,
+              heatLevel,
+              rotationRecommended,
+            };
+          })
+        );
+
+        return NextResponse.json({ success: true, wallets: walletHealthInfos });
+      }
+
       default:
         return NextResponse.json(
           { error: 'Invalid action' },

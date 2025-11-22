@@ -20,11 +20,16 @@ import SimulationMode from '../components/SimulationMode';
 import OneClickTemplates from '../components/OneClickTemplates';
 import EmergencyStopLoss from '../components/EmergencyStopLoss';
 import AITokenNameGenerator from '../components/AITokenNameGenerator';
+import BundleAnalytics from '../components/BundleAnalytics';
+import WalletHealthMonitor from '../components/WalletHealthMonitor';
+import FeeOptimizer from '../components/FeeOptimizer';
+import MultiTokenPortfolio from '../components/MultiTokenPortfolio';
+import AchievementSystem from '../components/AchievementSystem';
 
 // Initialize connection (should come from RPC manager in production)
 const connection = new Connection('https://api.mainnet-beta.solana.com');
 
-type TabType = 'dashboard' | 'portfolio' | 'create' | 'sell' | 'sniper' | 'volume' | 'rpc' | 'wallets' | 'analytics' | 'autosell' | 'simulation' | 'templates' | 'emergency' | 'namegen';
+type TabType = 'dashboard' | 'portfolio' | 'create' | 'sell' | 'sniper' | 'volume' | 'rpc' | 'wallets' | 'analytics' | 'autosell' | 'simulation' | 'templates' | 'emergency' | 'namegen' | 'bundlestats' | 'health' | 'fees' | 'multiportfolio' | 'achievements';
 
 export default function Home() {
   const { connected } = useWallet();
@@ -121,15 +126,20 @@ export default function Home() {
             {[
               { id: 'dashboard', label: '📊 Dashboard' },
               { id: 'analytics', label: '📈 Analytics' },
+              { id: 'bundlestats', label: '📊 Bundle Stats' },
               { id: 'wallets', label: '👛 Wallets' },
+              { id: 'health', label: '🏥 Wallet Health' },
               { id: 'portfolio', label: '💼 Portfolio' },
+              { id: 'multiportfolio', label: '💼 Multi-Token' },
               { id: 'create', label: '🚀 Create' },
               { id: 'sell', label: '💰 Sell' },
               { id: 'sniper', label: '🎯 Sniper' },
               { id: 'volume', label: '📊 Volume' },
               { id: 'autosell', label: '🎯 Auto-Sell' },
+              { id: 'fees', label: '💸 Fee Optimizer' },
               { id: 'templates', label: '📋 Templates' },
               { id: 'simulation', label: '🧪 Simulation' },
+              { id: 'achievements', label: '🏆 Achievements' },
               { id: 'namegen', label: '🤖 Name Gen' },
               { id: 'emergency', label: '🚨 Emergency' },
               { id: 'rpc', label: '📡 RPC' },
@@ -169,15 +179,20 @@ export default function Home() {
           <div>
             {activeTab === 'dashboard' && <Dashboard mode={mode} />}
             {activeTab === 'analytics' && <TokenPerformanceDashboard />}
+            {activeTab === 'bundlestats' && <BundleAnalytics />}
             {activeTab === 'wallets' && <WalletManager />}
+            {activeTab === 'health' && <WalletHealthMonitor />}
             {activeTab === 'portfolio' && <PortfolioPanel connection={connection} mode={mode} />}
+            {activeTab === 'multiportfolio' && <MultiTokenPortfolio />}
             {activeTab === 'create' && <TokenCreator mode={mode} />}
             {activeTab === 'sell' && <SellPanel connection={connection} mode={mode} />}
             {activeTab === 'sniper' && <SniperPanel mode={mode} />}
             {activeTab === 'volume' && <VolumePanel mode={mode} />}
             {activeTab === 'autosell' && <AutoSellStrategies />}
+            {activeTab === 'fees' && <FeeOptimizer />}
             {activeTab === 'templates' && <OneClickTemplates />}
             {activeTab === 'simulation' && <SimulationMode />}
+            {activeTab === 'achievements' && <AchievementSystem />}
             {activeTab === 'namegen' && <AITokenNameGenerator />}
             {activeTab === 'emergency' && <EmergencyStopLoss />}
             {activeTab === 'rpc' && <RPCManager />}
