@@ -377,6 +377,12 @@ export class Bundler {
 
     const results: TransactionResult[] = [];
 
+    // HYBRID MODE: Special handling - atomic first bundle + stealth remainder
+    if (mode === 'hybrid') {
+      logger.info('🔥 HYBRID MODE: Combining MEV protection + organic appearance');
+      return await this.executeHybridBundle(mint, buyInstructions, strategy);
+    }
+
     // 1. Shuffle wallets if enabled (breaks sequential pattern)
     let walletIndices = Array.from({ length: this.bundlerWallets.length }, (_, i) => i);
     if (stealthConfig.shuffleWallets) {
@@ -452,6 +458,221 @@ export class Bundler {
     logger.success(`🥷 Stealth execution complete: ${successCount}/${results.length} successful`);
 
     return results;
+  }
+
+  // ============================================
+  // HYBRID Bundle Execution - BEST OF BOTH WORLDS
+  // ============================================
+
+  private async executeHybridBundle(
+    mint: PublicKey,
+    buyInstructions: TransactionInstruction[],
+    strategy: BundleStrategy
+  ): Promise<TransactionResult[]> {
+    const stealthConfig = strategy.antiDetection.stealthConfig!;
+    const firstBundlePercent = stealthConfig.firstBundlePercent || 70;
+
+    logger.info(`💪 HYBRID: ${firstBundlePercent}% atomic (MEV protected) + ${100-firstBundlePercent}% stealth (organic looking)`);
+
+    const results: TransactionResult[] = [];
+    const totalWallets = this.bundlerWallets.length;
+
+    // Calculate split
+    const firstBundleCount = Math.floor(totalWallets * (firstBundlePercent / 100));
+    const remainingCount = totalWallets - firstBundleCount;
+
+    logger.info(`Split: ${firstBundleCount} wallets atomic + ${remainingCount} wallets stealth`);
+
+    // 1. FIRST BUNDLE: Atomic Jito (MEV PROTECTED - majority of capital)
+    logger.info('⚡ Phase 1: Executing atomic Jito bundle with majority of wallets...');
+
+    const firstBundleInstructions = buyInstructions.slice(0, firstBundleCount);
+    const firstBundleResults = await this.executeAtomicJitoBundle(
+      mint,
+      firstBundleInstructions,
+      strategy,
+      0, // start index
+      firstBundleCount
+    );
+
+    results.push(...firstBundleResults);
+
+    logger.success(`✅ Phase 1 complete: ${firstBundleCount} wallets MEV protected`);
+
+    // Short delay before Phase 2 (looks like organic snipers joining)
+    await sleep(600 + Math.random() * 200); // 600-800ms = 1-2 blocks
+
+    // 2. SECOND PHASE: Spread remaining wallets for stealth (organic appearance)
+    if (remainingCount > 0) {
+      logger.info(`🥷 Phase 2: Spreading ${remainingCount} wallets across 2 blocks for organic appearance...`);
+
+      const remainingInstructions = buyInstructions.slice(firstBundleCount);
+      const midPoint = Math.floor(remainingCount / 2);
+
+      // Block 2: First half of remaining
+      const block2Promises = [];
+      for (let i = 0; i < midPoint; i++) {
+        const delay = Math.random() * 300 + 100; // 100-400ms
+        await sleep(delay);
+
+        block2Promises.push(
+          this.executeRpcTransaction(
+            mint,
+            firstBundleCount + i,
+            buyInstructions,
+            strategy
+          )
+        );
+      }
+
+      const block2Results = await Promise.all(block2Promises);
+      results.push(...block2Results);
+
+      // Wait for next block
+      await sleep(400 + Math.random() * 200); // 400-600ms
+
+      // Block 3: Second half of remaining
+      const block3Promises = [];
+      for (let i = midPoint; i < remainingCount; i++) {
+        const delay = Math.random() * 300 + 100; // 100-400ms
+        await sleep(delay);
+
+        block3Promises.push(
+          this.executeRpcTransaction(
+            mint,
+            firstBundleCount + i,
+            buyInstructions,
+            strategy
+          )
+        );
+      }
+
+      const block3Results = await Promise.all(block3Promises);
+      results.push(...block3Results);
+
+      logger.success(`✅ Phase 2 complete: ${remainingCount} wallets spread organically`);
+    }
+
+    const successCount = results.filter(r => r.success).length;
+    logger.success(`🔥 HYBRID execution complete: ${successCount}/${totalWallets} successful`);
+    logger.info(`Result: ${firstBundlePercent}% MEV protected + ${100-firstBundlePercent}% organic looking`);
+
+    return results;
+  }
+
+  private async executeAtomicJitoBundle(
+    mint: PublicKey,
+    buyInstructions: TransactionInstruction[],
+    strategy: BundleStrategy,
+    startIndex: number,
+    count: number
+  ): Promise<TransactionResult[]> {
+    const results: TransactionResult[] = [];
+
+    try {
+      const lookupTable = await this.connection.getAddressLookupTable(this.lookupTableAddress!);
+      if (!lookupTable.value) throw new Error('LUT not found');
+
+      const transactions: VersionedTransaction[] = [];
+
+      // Pack wallets into transactions (5-6 per tx)
+      const walletsPerTx = count <= 10 ? 5 : 6;
+      const batches = Math.ceil(count / walletsPerTx);
+
+      const { blockhash } = await this.connection.getLatestBlockhash('finalized');
+
+      for (let i = 0; i < batches; i++) {
+        const batchStart = i * walletsPerTx;
+        const batchEnd = Math.min(batchStart + walletsPerTx, count);
+
+        const instructions: TransactionInstruction[] = [
+          ComputeBudgetProgram.setComputeUnitLimit({ units: 1_400_000 }),
+          ComputeBudgetProgram.setComputeUnitPrice({
+            microLamports: Math.max(strategy.priorityFee, 200000)
+          })
+        ];
+
+        for (let j = batchStart; j < batchEnd; j++) {
+          instructions.push(buyInstructions[j]);
+        }
+
+        const message = new TransactionMessage({
+          payerKey: this.bundlerWallets[startIndex + batchStart].publicKey,
+          recentBlockhash: blockhash,
+          instructions
+        }).compileToV0Message([lookupTable.value]);
+
+        const tx = new VersionedTransaction(message);
+        const signers = [];
+        for (let j = batchStart; j < batchEnd; j++) {
+          signers.push(this.bundlerWallets[startIndex + j]);
+        }
+        tx.sign(signers);
+
+        transactions.push(tx);
+      }
+
+      // Add Jito tip
+      const tipTx = await this.createJitoTip(0.005);
+      transactions.unshift(tipTx);
+
+      // Send to Jito
+      const bundle = transactions.map(tx => Buffer.from(tx.serialize()).toString('base64'));
+
+      let bundleId: string | null = null;
+      for (const endpoint of JITO_ENDPOINTS) {
+        try {
+          const response = await axios.post(endpoint, {
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'sendBundle',
+            params: [bundle]
+          }, { timeout: 5000 });
+
+          if (response.data.result) {
+            bundleId = response.data.result;
+            break;
+          }
+        } catch (error) {
+          continue;
+        }
+      }
+
+      if (!bundleId) throw new Error('All Jito endpoints failed');
+
+      // Wait for confirmation
+      await sleep(2000);
+
+      // Record in portfolio
+      for (let i = 0; i < count; i++) {
+        const wallet = this.bundlerWallets[startIndex + i];
+        this.portfolio.recordBuy({
+          walletAddress: wallet.publicKey.toBase58(),
+          tokenAddress: mint.toBase58(),
+          amount: 100000,
+          solSpent: 0.1,
+          pricePerToken: 0.000001,
+          timestamp: new Date(),
+          signature: `${bundleId}_${i}`
+        });
+
+        results.push({
+          success: true,
+          signature: `${bundleId}_${i}`,
+          timestamp: new Date(),
+          confirmationTime: 2000
+        });
+      }
+
+      return results;
+    } catch (error) {
+      logger.error('Atomic Jito bundle failed:', error);
+      // Fallback to individual RPC
+      for (let i = 0; i < count; i++) {
+        results.push(await this.executeRpcTransaction(mint, startIndex + i, buyInstructions, strategy));
+      }
+      return results;
+    }
   }
 
   private getStealthConfig(mode: string, totalWallets: number) {

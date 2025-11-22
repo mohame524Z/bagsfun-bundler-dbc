@@ -230,23 +230,27 @@ async function setup() {
       message: 'Stealth mode (balance speed vs detectability):',
       choices: [
         {
-          name: 'NONE - Atomic Jito (fastest, 1 block, detectable)',
+          name: 'NONE - Atomic Jito (fastest, 1 block, detectable, MEV protected)',
           value: 'none'
         },
         {
-          name: 'LIGHT - 2-block spread (fast, harder to detect)',
+          name: 'HYBRID - 70% atomic + 30% spread (BEST - MEV protected + organic) [Recommended]',
+          value: 'hybrid'
+        },
+        {
+          name: 'LIGHT - 2-block spread (fast, some MEV risk)',
           value: 'light'
         },
         {
-          name: 'MEDIUM - 3-block spread + randomization (balanced) [Recommended]',
+          name: 'MEDIUM - 3-block spread (balanced, moderate MEV risk)',
           value: 'medium'
         },
         {
-          name: 'AGGRESSIVE - 4-5 block spread (slowest, nearly undetectable)',
+          name: 'AGGRESSIVE - 4-5 block spread (slowest, HIGH MEV risk)',
           value: 'aggressive'
         }
       ],
-      default: 'medium'
+      default: 'hybrid'
     },
     {
       type: 'confirm',
@@ -275,6 +279,7 @@ async function setup() {
 
   if (stealthAnswers.stealthMode !== 'none') {
     const spreadBlocks = {
+      hybrid: 3,
       light: 2,
       medium: 3,
       aggressive: 5
@@ -289,11 +294,22 @@ async function setup() {
       aggressiveVariance: stealthAnswers.stealthMode === 'aggressive',
       simulatePostLaunch: false,
       useAgedWallets: false,
-      multiRpcRouting: false
+      multiRpcRouting: false,
+      firstBundlePercent: stealthAnswers.stealthMode === 'hybrid' ? 70 : undefined
     };
 
-    console.log(chalk.yellow('\n⚠️  Note: Stealth mode trades speed for undetectability'));
-    console.log(chalk.gray(`Execution time: ${stealthAnswers.stealthMode === 'light' ? '2-3s' : stealthAnswers.stealthMode === 'medium' ? '3-4s' : '5-6s'}`));
+    if (stealthAnswers.stealthMode === 'hybrid') {
+      console.log(chalk.green('\n✅ HYBRID MODE: Best of both worlds!'));
+      console.log(chalk.gray('  - 70% of wallets in atomic Jito bundle (MEV protected)'));
+      console.log(chalk.gray('  - 30% of wallets spread across blocks (organic looking)'));
+      console.log(chalk.gray('  - Execution time: ~2-3s'));
+    } else {
+      console.log(chalk.yellow('\n⚠️  Note: Stealth mode trades speed for undetectability'));
+      console.log(chalk.gray(`Execution time: ${stealthAnswers.stealthMode === 'light' ? '2-3s' : stealthAnswers.stealthMode === 'medium' ? '3-4s' : '5-6s'}`));
+      if (stealthAnswers.stealthMode !== 'light') {
+        console.log(chalk.red('⚠️  WARNING: MEV bots can exploit gaps between blocks!'));
+      }
+    }
   }
 
   config.bundleStrategy = {

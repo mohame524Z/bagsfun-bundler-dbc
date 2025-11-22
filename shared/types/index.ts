@@ -91,9 +91,10 @@ export interface TimingConfig {
 
 export enum StealthMode {
   NONE = 'none',           // Atomic Jito (fastest, detectable)
-  LIGHT = 'light',         // 2-block spread (fast, harder to detect)
-  MEDIUM = 'medium',       // 3-block spread + randomization (balanced)
-  AGGRESSIVE = 'aggressive' // 4-5 block spread + full stealth (slowest, undetectable)
+  HYBRID = 'hybrid',       // 70% atomic + 30% stealth (BEST - MEV protected + organic looking)
+  LIGHT = 'light',         // 2-block spread (fast, harder to detect, some MEV risk)
+  MEDIUM = 'medium',       // 3-block spread + randomization (balanced, MEV risk)
+  AGGRESSIVE = 'aggressive' // 4-5 block spread + full stealth (slowest, undetectable, HIGH MEV risk)
 }
 
 export interface StealthConfig {
@@ -106,6 +107,7 @@ export interface StealthConfig {
   simulatePostLaunch: boolean;   // Random activity after launch
   useAgedWallets: boolean;       // Prefer wallets with history
   multiRpcRouting: boolean;      // Different RPC per wallet
+  firstBundlePercent?: number;   // For hybrid: % of wallets in atomic first bundle (default 70)
 }
 
 export interface AntiDetectionConfig {
