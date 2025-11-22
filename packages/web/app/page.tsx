@@ -42,11 +42,12 @@ import MarketSentiment from '../components/MarketSentiment';
 import RugPullSimulator from '../components/RugPullSimulator';
 import SocialTrading from '../components/SocialTrading';
 import SmartNotifications from '../components/SmartNotifications';
+import SecuritySettings from '../components/SecuritySettings';
 
 // Initialize connection (should come from RPC manager in production)
 const connection = new Connection('https://api.mainnet-beta.solana.com');
 
-type TabType = 'dashboard' | 'portfolio' | 'create' | 'sell' | 'sniper' | 'volume' | 'rpc' | 'wallets' | 'analytics' | 'autosell' | 'simulation' | 'templates' | 'emergency' | 'namegen' | 'bundlestats' | 'health' | 'fees' | 'multiportfolio' | 'achievements' | 'advsniper' | 'advvolume' | 'distribution' | 'benchmarks' | 'abtesting' | 'intelligence' | 'marketmaker' | 'isolation' | 'privacy' | 'scripts' | 'apitools' | 'sharing' | 'onchain' | 'sentiment' | 'rugsim' | 'social' | 'notifications';
+type TabType = 'dashboard' | 'portfolio' | 'create' | 'sell' | 'sniper' | 'volume' | 'rpc' | 'wallets' | 'analytics' | 'autosell' | 'simulation' | 'templates' | 'emergency' | 'namegen' | 'bundlestats' | 'health' | 'fees' | 'multiportfolio' | 'achievements' | 'advsniper' | 'advvolume' | 'distribution' | 'benchmarks' | 'abtesting' | 'intelligence' | 'marketmaker' | 'isolation' | 'privacy' | 'scripts' | 'apitools' | 'sharing' | 'onchain' | 'sentiment' | 'rugsim' | 'social' | 'notifications' | 'security';
 
 export default function Home() {
   const { connected } = useWallet();
@@ -177,6 +178,7 @@ export default function Home() {
               { id: 'namegen', label: '🤖 Name Gen' },
               { id: 'emergency', label: '🚨 Emergency' },
               { id: 'rpc', label: '📡 RPC' },
+              { id: 'security', label: '🔒 Security' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -247,6 +249,7 @@ export default function Home() {
             {activeTab === 'namegen' && <AITokenNameGenerator />}
             {activeTab === 'emergency' && <EmergencyStopLoss />}
             {activeTab === 'rpc' && <RPCManager />}
+            {activeTab === 'security' && <SecuritySettings />}
           </div>
         )}
       </div>
