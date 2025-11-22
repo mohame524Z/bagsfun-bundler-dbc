@@ -53,6 +53,11 @@ interface BundleAnalytics {
   mevInteractions: number;
   blocksUsed: number;
   detectionRisk: 'low' | 'medium' | 'high';
+  // Bundle-specific PnL (not total token PnL)
+  bundlePnL?: number;
+  bundlePnLPercent?: number;
+  tokensBought?: number;
+  currentValue?: number;
 }
 
 // Load analytics data
@@ -91,8 +96,39 @@ export async function GET(request: NextRequest) {
       }
 
       case 'bundles': {
-        // Return all bundle analytics
-        return NextResponse.json({ success: true, bundles: analytics.bundles });
+        // Return all bundle analytics with PnL calculations
+        const bundlesWithPnL = analytics.bundles.map(bundle => {
+          // Calculate bundle-specific PnL if we have the data
+          let bundlePnL = bundle.bundlePnL || 0;
+          let bundlePnLPercent = bundle.bundlePnLPercent || 0;
+
+          // If PnL not stored, try to calculate from current value
+          if (bundle.currentValue !== undefined && bundle.tokensBought !== undefined) {
+            const totalCost = bundle.totalSolSpent + bundle.totalFeesSpent;
+            bundlePnL = bundle.currentValue - totalCost;
+            bundlePnLPercent = totalCost > 0 ? (bundlePnL / totalCost) * 100 : 0;
+          }
+
+          return {
+            ...bundle,
+            bundlePnL,
+            bundlePnLPercent,
+          };
+        });
+
+        // Calculate bundle-specific summary stats
+        const summary = {
+          totalBundles: bundlesWithPnL.length,
+          avgBundleSuccessRate: bundlesWithPnL.reduce((sum, b) => sum + b.successRate, 0) / (bundlesWithPnL.length || 1),
+          avgConfirmationTime: bundlesWithPnL.reduce((sum, b) => sum + b.avgConfirmationTime, 0) / (bundlesWithPnL.length || 1),
+          totalSolSpent: bundlesWithPnL.reduce((sum, b) => sum + b.totalSolSpent, 0),
+          totalFeesSpent: bundlesWithPnL.reduce((sum, b) => sum + b.totalFeesSpent, 0),
+          totalBundlePnL: bundlesWithPnL.reduce((sum, b) => sum + (b.bundlePnL || 0), 0),
+          avgBundlePnL: bundlesWithPnL.reduce((sum, b) => sum + (b.bundlePnL || 0), 0) / (bundlesWithPnL.length || 1),
+          profitableBundles: bundlesWithPnL.filter(b => (b.bundlePnL || 0) > 0).length,
+        };
+
+        return NextResponse.json({ success: true, bundles: bundlesWithPnL, summary });
       }
 
       case 'summary': {
