@@ -129,7 +129,7 @@ export class PumpFunClient {
       ASSOCIATED_TOKEN_PROGRAM_ID
     );
 
-    const [metadata PDA] = PublicKey.findProgramAddressSync(
+    const [metadataPDA] = PublicKey.findProgramAddressSync(
       [
         Buffer.from('metadata'),
         new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s').toBuffer(),
