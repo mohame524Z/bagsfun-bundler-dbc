@@ -30,11 +30,23 @@ import VolumeEnhancements from '../components/VolumeEnhancements';
 import ProfitDistribution from '../components/ProfitDistribution';
 import PerformanceBenchmarking from '../components/PerformanceBenchmarking';
 import ABTestingFramework from '../components/ABTestingFramework';
+import CompetitorIntelligence from '../components/CompetitorIntelligence';
+import MarketMakingBot from '../components/MarketMakingBot';
+import WalletIsolation from '../components/WalletIsolation';
+import TransactionPrivacy from '../components/TransactionPrivacy';
+import CustomScripts from '../components/CustomScripts';
+import APITools from '../components/APITools';
+import StrategySharing from '../components/StrategySharing';
+import OnChainAnalytics from '../components/OnChainAnalytics';
+import MarketSentiment from '../components/MarketSentiment';
+import RugPullSimulator from '../components/RugPullSimulator';
+import SocialTrading from '../components/SocialTrading';
+import SmartNotifications from '../components/SmartNotifications';
 
 // Initialize connection (should come from RPC manager in production)
 const connection = new Connection('https://api.mainnet-beta.solana.com');
 
-type TabType = 'dashboard' | 'portfolio' | 'create' | 'sell' | 'sniper' | 'volume' | 'rpc' | 'wallets' | 'analytics' | 'autosell' | 'simulation' | 'templates' | 'emergency' | 'namegen' | 'bundlestats' | 'health' | 'fees' | 'multiportfolio' | 'achievements' | 'advsniper' | 'advvolume' | 'distribution' | 'benchmarks' | 'abtesting';
+type TabType = 'dashboard' | 'portfolio' | 'create' | 'sell' | 'sniper' | 'volume' | 'rpc' | 'wallets' | 'analytics' | 'autosell' | 'simulation' | 'templates' | 'emergency' | 'namegen' | 'bundlestats' | 'health' | 'fees' | 'multiportfolio' | 'achievements' | 'advsniper' | 'advvolume' | 'distribution' | 'benchmarks' | 'abtesting' | 'intelligence' | 'marketmaker' | 'isolation' | 'privacy' | 'scripts' | 'apitools' | 'sharing' | 'onchain' | 'sentiment' | 'rugsim' | 'social' | 'notifications';
 
 export default function Home() {
   const { connected } = useWallet();
@@ -133,8 +145,12 @@ export default function Home() {
               { id: 'analytics', label: '📈 Analytics' },
               { id: 'bundlestats', label: '📊 Bundle Stats' },
               { id: 'benchmarks', label: '🏅 Benchmarks' },
+              { id: 'intelligence', label: '🔍 Intel' },
+              { id: 'onchain', label: '⛓️ On-Chain' },
+              { id: 'sentiment', label: '📊 Sentiment' },
               { id: 'wallets', label: '👛 Wallets' },
               { id: 'health', label: '🏥 Health' },
+              { id: 'isolation', label: '🔒 Isolation' },
               { id: 'portfolio', label: '💼 Portfolio' },
               { id: 'multiportfolio', label: '💎 Multi-Token' },
               { id: 'create', label: '🚀 Create' },
@@ -143,13 +159,21 @@ export default function Home() {
               { id: 'advsniper', label: '🎯 Adv Sniper' },
               { id: 'volume', label: '📊 Volume' },
               { id: 'advvolume', label: '📊 Adv Volume' },
+              { id: 'marketmaker', label: '🤖 Market Maker' },
               { id: 'autosell', label: '🎯 Auto-Sell' },
               { id: 'distribution', label: '💰 Distribution' },
               { id: 'fees', label: '💸 Fees' },
+              { id: 'privacy', label: '🔐 Privacy' },
               { id: 'templates', label: '📋 Templates' },
               { id: 'simulation', label: '🧪 Simulation' },
               { id: 'abtesting', label: '🧪 A/B Testing' },
+              { id: 'rugsim', label: '🧪 Rug Sim' },
               { id: 'achievements', label: '🏆 Achievements' },
+              { id: 'social', label: '👥 Social' },
+              { id: 'sharing', label: '🔄 Sharing' },
+              { id: 'scripts', label: '⚙️ Scripts' },
+              { id: 'apitools', label: '🔌 API' },
+              { id: 'notifications', label: '🔔 Notifications' },
               { id: 'namegen', label: '🤖 Name Gen' },
               { id: 'emergency', label: '🚨 Emergency' },
               { id: 'rpc', label: '📡 RPC' },
@@ -191,8 +215,12 @@ export default function Home() {
             {activeTab === 'analytics' && <TokenPerformanceDashboard />}
             {activeTab === 'bundlestats' && <BundleAnalytics />}
             {activeTab === 'benchmarks' && <PerformanceBenchmarking />}
+            {activeTab === 'intelligence' && <CompetitorIntelligence />}
+            {activeTab === 'onchain' && <OnChainAnalytics />}
+            {activeTab === 'sentiment' && <MarketSentiment />}
             {activeTab === 'wallets' && <WalletManager />}
             {activeTab === 'health' && <WalletHealthMonitor />}
+            {activeTab === 'isolation' && <WalletIsolation />}
             {activeTab === 'portfolio' && <PortfolioPanel connection={connection} mode={mode} />}
             {activeTab === 'multiportfolio' && <MultiTokenPortfolio />}
             {activeTab === 'create' && <TokenCreator mode={mode} />}
@@ -201,13 +229,21 @@ export default function Home() {
             {activeTab === 'advsniper' && <SniperImprovements />}
             {activeTab === 'volume' && <VolumePanel mode={mode} />}
             {activeTab === 'advvolume' && <VolumeEnhancements />}
+            {activeTab === 'marketmaker' && <MarketMakingBot />}
             {activeTab === 'autosell' && <AutoSellStrategies />}
             {activeTab === 'distribution' && <ProfitDistribution />}
             {activeTab === 'fees' && <FeeOptimizer />}
+            {activeTab === 'privacy' && <TransactionPrivacy />}
             {activeTab === 'templates' && <OneClickTemplates />}
             {activeTab === 'simulation' && <SimulationMode />}
             {activeTab === 'abtesting' && <ABTestingFramework />}
+            {activeTab === 'rugsim' && <RugPullSimulator />}
             {activeTab === 'achievements' && <AchievementSystem />}
+            {activeTab === 'social' && <SocialTrading />}
+            {activeTab === 'sharing' && <StrategySharing />}
+            {activeTab === 'scripts' && <CustomScripts />}
+            {activeTab === 'apitools' && <APITools />}
+            {activeTab === 'notifications' && <SmartNotifications />}
             {activeTab === 'namegen' && <AITokenNameGenerator />}
             {activeTab === 'emergency' && <EmergencyStopLoss />}
             {activeTab === 'rpc' && <RPCManager />}
