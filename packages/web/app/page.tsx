@@ -14,13 +14,21 @@ import PortfolioPanel from '../components/PortfolioPanel';
 import SellPanel from '../components/SellPanel';
 import WalletManager from '../components/WalletManager';
 import SetupWizard from '../components/SetupWizard';
+import TokenPerformanceDashboard from '../components/TokenPerformanceDashboard';
+import AutoSellStrategies from '../components/AutoSellStrategies';
+import SimulationMode from '../components/SimulationMode';
+import OneClickTemplates from '../components/OneClickTemplates';
+import EmergencyStopLoss from '../components/EmergencyStopLoss';
+import AITokenNameGenerator from '../components/AITokenNameGenerator';
 
 // Initialize connection (should come from RPC manager in production)
 const connection = new Connection('https://api.mainnet-beta.solana.com');
 
+type TabType = 'dashboard' | 'portfolio' | 'create' | 'sell' | 'sniper' | 'volume' | 'rpc' | 'wallets' | 'analytics' | 'autosell' | 'simulation' | 'templates' | 'emergency' | 'namegen';
+
 export default function Home() {
   const { connected } = useWallet();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'portfolio' | 'create' | 'sell' | 'sniper' | 'volume' | 'rpc' | 'wallets'>('dashboard');
+  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [mode, setMode] = useState<PumpMode>(PumpMode.MAYHEM);
   const [configExists, setConfigExists] = useState<boolean | null>(null);
   const [checkingConfig, setCheckingConfig] = useState(true);
@@ -112,12 +120,18 @@ export default function Home() {
           <nav className="flex gap-2 mt-6 flex-wrap">
             {[
               { id: 'dashboard', label: '📊 Dashboard' },
+              { id: 'analytics', label: '📈 Analytics' },
               { id: 'wallets', label: '👛 Wallets' },
               { id: 'portfolio', label: '💼 Portfolio' },
               { id: 'create', label: '🚀 Create' },
               { id: 'sell', label: '💰 Sell' },
               { id: 'sniper', label: '🎯 Sniper' },
-              { id: 'volume', label: '📈 Volume' },
+              { id: 'volume', label: '📊 Volume' },
+              { id: 'autosell', label: '🎯 Auto-Sell' },
+              { id: 'templates', label: '📋 Templates' },
+              { id: 'simulation', label: '🧪 Simulation' },
+              { id: 'namegen', label: '🤖 Name Gen' },
+              { id: 'emergency', label: '🚨 Emergency' },
               { id: 'rpc', label: '📡 RPC' },
             ].map((tab) => (
               <button
@@ -154,12 +168,18 @@ export default function Home() {
         ) : (
           <div>
             {activeTab === 'dashboard' && <Dashboard mode={mode} />}
+            {activeTab === 'analytics' && <TokenPerformanceDashboard />}
             {activeTab === 'wallets' && <WalletManager />}
             {activeTab === 'portfolio' && <PortfolioPanel connection={connection} mode={mode} />}
             {activeTab === 'create' && <TokenCreator mode={mode} />}
             {activeTab === 'sell' && <SellPanel connection={connection} mode={mode} />}
             {activeTab === 'sniper' && <SniperPanel mode={mode} />}
             {activeTab === 'volume' && <VolumePanel mode={mode} />}
+            {activeTab === 'autosell' && <AutoSellStrategies />}
+            {activeTab === 'templates' && <OneClickTemplates />}
+            {activeTab === 'simulation' && <SimulationMode />}
+            {activeTab === 'namegen' && <AITokenNameGenerator />}
+            {activeTab === 'emergency' && <EmergencyStopLoss />}
             {activeTab === 'rpc' && <RPCManager />}
           </div>
         )}
