@@ -13,7 +13,6 @@ interface PortfolioPanelProps {
 interface TokenHolding {
   tokenAddress: string;
   symbol: string;
-  name: string;
   totalAmount: number;
   averagePrice: number;
   currentValue: number;
@@ -39,57 +38,44 @@ export default function PortfolioPanel({ connection, mode }: PortfolioPanelProps
   const [portfolio, setPortfolio] = useState<PortfolioStats | null>(null);
   const [holdings, setHoldings] = useState<TokenHolding[]>([]);
   const [selectedToken, setSelectedToken] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const loadPortfolio = async () => {
     if (!publicKey) return;
 
     setLoading(true);
+    setError(null);
+
     try {
-      // In a real implementation, you would:
-      // 1. Load bundler wallets from localStorage or API
-      // 2. Create PortfolioTracker instance
-      // 3. Fetch actual portfolio data
+      const response = await fetch('/api/portfolio');
+      const data = await response.json();
 
-      // Mock data for demonstration
-      const mockPortfolio: PortfolioStats = {
-        totalInvested: 5.5,
-        currentValue: 7.2,
-        unrealizedPnL: 1.7,
-        realizedPnL: 0.3,
-        totalPnL: 2.0,
-        pnlPercentage: 36.36,
-        totalBuys: 12,
-        totalSells: 3,
-        uniqueTokens: 2
-      };
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to load portfolio');
+      }
 
-      const mockHoldings: TokenHolding[] = [
-        {
-          tokenAddress: 'pump...abc123',
-          symbol: 'MOON',
-          name: 'Moon Token',
-          totalAmount: 1000000,
-          averagePrice: 0.0000055,
-          currentValue: 3.8,
-          unrealizedPnL: 1.2,
-          walletCount: 8
-        },
-        {
-          tokenAddress: 'pump...def456',
-          symbol: 'GEM',
-          name: 'Hidden Gem',
-          totalAmount: 500000,
-          averagePrice: 0.0000068,
-          currentValue: 3.4,
-          unrealizedPnL: 0.5,
-          walletCount: 4
-        }
-      ];
+      // Transform API response to component state
+      const totalPnL = data.portfolio.unrealizedPnL + data.portfolio.realizedPnL;
+      const pnlPercentage = data.portfolio.totalInvested > 0
+        ? ((totalPnL / data.portfolio.totalInvested) * 100)
+        : 0;
 
-      setPortfolio(mockPortfolio);
-      setHoldings(mockHoldings);
-    } catch (error) {
-      console.error('Failed to load portfolio:', error);
+      setPortfolio({
+        totalInvested: data.portfolio.totalInvested,
+        currentValue: data.portfolio.currentValue,
+        unrealizedPnL: data.portfolio.unrealizedPnL,
+        realizedPnL: data.portfolio.realizedPnL,
+        totalPnL,
+        pnlPercentage,
+        totalBuys: data.stats.totalBuys,
+        totalSells: data.stats.totalSells,
+        uniqueTokens: data.stats.uniqueTokens,
+      });
+
+      setHoldings(data.portfolio.tokens);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load portfolio');
+      console.error('Failed to load portfolio:', err);
     } finally {
       setLoading(false);
     }
@@ -117,6 +103,12 @@ export default function PortfolioPanel({ connection, mode }: PortfolioPanelProps
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="bg-red-900/30 border border-red-500 rounded-lg p-4">
+          <p className="text-red-400">❌ {error}</p>
+        </div>
+      )}
+
       {/* Overall Performance Card */}
       <div className="bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-lg p-6 border border-purple-500/20">
         <h2 className="text-2xl font-bold mb-4 flex items-center">
@@ -126,7 +118,14 @@ export default function PortfolioPanel({ connection, mode }: PortfolioPanelProps
             disabled={loading}
             className="ml-auto text-sm px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-50"
           >
-            {loading ? 'Loading...' : '↻ Refresh'}
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Loading...</span>
+              </div>
+            ) : (
+              '↻ Refresh'
+            )}
           </button>
         </h2>
 
@@ -207,7 +206,6 @@ export default function PortfolioPanel({ connection, mode }: PortfolioPanelProps
                   <div className="flex-1">
                     <div className="flex items-center space-x-3">
                       <h3 className="text-lg font-bold">{holding.symbol}</h3>
-                      <span className="text-sm text-gray-400">{holding.name}</span>
                     </div>
                     <p className="text-xs text-gray-500 font-mono">
                       {holding.tokenAddress}
