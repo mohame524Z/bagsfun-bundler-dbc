@@ -1,0 +1,378 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
+import * as fs from 'fs';
+import * as path from 'path';
+import { AppConfig } from '@pump-bundler/types';
+import bs58 from 'bs58';
+
+const CONFIG_PATH = path.join(process.cwd(), '..', '..', 'config', 'bundler-config.json');
+
+interface WalletInfo {
+  address: string;
+  privateKey: string;
+  solBalance: number;
+  tokenCount: number;
+  totalValue: number;
+  pnl: number;
+  status: 'active' | 'empty' | 'funded';
+}
+
+// Load config
+function loadConfig(): AppConfig | null {
+  try {
+    if (!fs.existsSync(CONFIG_PATH)) {
+      return null;
+    }
+    const configData = fs.readFileSync(CONFIG_PATH, 'utf-8');
+    return JSON.parse(configData) as AppConfig;
+  } catch (error) {
+    console.error('Failed to load config:', error);
+    return null;
+  }
+}
+
+// Save config
+function saveConfig(config: AppConfig): void {
+  const configDir = path.dirname(CONFIG_PATH);
+  if (!fs.existsSync(configDir)) {
+    fs.mkdirSync(configDir, { recursive: true });
+  }
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+}
+
+// Get wallet info from chain
+async function getWalletInfo(connection: Connection, privateKey: string): Promise<WalletInfo> {
+  try {
+    const keypair = Keypair.fromSecretKey(bs58.decode(privateKey));
+    const publicKey = keypair.publicKey;
+
+    // Get SOL balance
+    const balance = await connection.getBalance(publicKey);
+    const solBalance = balance / LAMPORTS_PER_SOL;
+
+    // Get token accounts
+    const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
+      programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
+    });
+
+    const tokenCount = tokenAccounts.value.length;
+
+    // Calculate total value and PnL (simplified - would need price data for accurate calculation)
+    let totalValue = solBalance;
+    let pnl = 0; // Would need to track initial investment
+
+    // Determine status
+    let status: 'active' | 'empty' | 'funded' = 'empty';
+    if (tokenCount > 0) {
+      status = 'active';
+    } else if (solBalance > 0) {
+      status = 'funded';
+    }
+
+    return {
+      address: publicKey.toBase58(),
+      privateKey,
+      solBalance,
+      tokenCount,
+      totalValue,
+      pnl,
+      status,
+    };
+  } catch (error) {
+    console.error('Failed to get wallet info:', error);
+    // Return empty wallet info on error
+    return {
+      address: '',
+      privateKey,
+      solBalance: 0,
+      tokenCount: 0,
+      totalValue: 0,
+      pnl: 0,
+      status: 'empty',
+    };
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get('action');
+
+    const config = loadConfig();
+    if (!config) {
+      return NextResponse.json(
+        { error: 'Configuration not found. Please run setup first.' },
+        { status: 404 }
+      );
+    }
+
+    // Create connection
+    const rpcUrl = config.rpc?.endpoints?.[0]?.url || 'https://api.mainnet-beta.solana.com';
+    const connection = new Connection(rpcUrl);
+
+    switch (action) {
+      case 'list': {
+        const bundleWallets = config.wallet?.bundleWallets || [];
+
+        // Get info for all wallets
+        const walletInfos = await Promise.all(
+          bundleWallets.map(pk => getWalletInfo(connection, pk))
+        );
+
+        return NextResponse.json({ success: true, wallets: walletInfos });
+      }
+
+      default:
+        return NextResponse.json(
+          { error: 'Invalid action' },
+          { status: 400 }
+        );
+    }
+  } catch (error) {
+    console.error('Wallet operation failed:', error);
+    return NextResponse.json(
+      { error: 'Wallet operation failed' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { action } = body;
+
+    const config = loadConfig();
+    if (!config) {
+      return NextResponse.json(
+        { error: 'Configuration not found. Please run setup first.' },
+        { status: 404 }
+      );
+    }
+
+    // Create connection
+    const rpcUrl = config.rpc?.endpoints?.[0]?.url || 'https://api.mainnet-beta.solana.com';
+    const connection = new Connection(rpcUrl);
+
+    switch (action) {
+      case 'generate': {
+        const { count } = body;
+
+        if (!count || count < 1 || count > 100) {
+          return NextResponse.json(
+            { error: 'Count must be between 1 and 100' },
+            { status: 400 }
+          );
+        }
+
+        // Generate new wallets
+        const newWallets: string[] = [];
+        for (let i = 0; i < count; i++) {
+          const keypair = Keypair.generate();
+          const privateKey = bs58.encode(keypair.secretKey);
+          newWallets.push(privateKey);
+        }
+
+        // Add to config
+        if (!config.wallet) {
+          config.wallet = {
+            mainWalletPrivateKey: '',
+            bundleWallets: [],
+            walletCount: 0,
+            generateWalletsOnStartup: false,
+          };
+        }
+
+        config.wallet.bundleWallets = [
+          ...(config.wallet.bundleWallets || []),
+          ...newWallets,
+        ];
+        config.wallet.walletCount = config.wallet.bundleWallets.length;
+
+        saveConfig(config);
+
+        return NextResponse.json({
+          success: true,
+          generated: count,
+          total: config.wallet.bundleWallets.length,
+        });
+      }
+
+      case 'import': {
+        const { privateKeys } = body;
+
+        if (!Array.isArray(privateKeys) || privateKeys.length === 0) {
+          return NextResponse.json(
+            { error: 'Invalid private keys array' },
+            { status: 400 }
+          );
+        }
+
+        // Validate all keys
+        const validKeys: string[] = [];
+        for (const pk of privateKeys) {
+          try {
+            // Try to decode and create keypair to validate
+            const keypair = Keypair.fromSecretKey(bs58.decode(pk));
+            validKeys.push(pk);
+          } catch (error) {
+            console.error('Invalid private key:', pk.slice(0, 8) + '...');
+          }
+        }
+
+        if (validKeys.length === 0) {
+          return NextResponse.json(
+            { error: 'No valid private keys provided' },
+            { status: 400 }
+          );
+        }
+
+        // Add to config
+        if (!config.wallet) {
+          config.wallet = {
+            mainWalletPrivateKey: '',
+            bundleWallets: [],
+            walletCount: 0,
+            generateWalletsOnStartup: false,
+          };
+        }
+
+        config.wallet.bundleWallets = [
+          ...(config.wallet.bundleWallets || []),
+          ...validKeys,
+        ];
+        config.wallet.walletCount = config.wallet.bundleWallets.length;
+
+        saveConfig(config);
+
+        return NextResponse.json({
+          success: true,
+          imported: validKeys.length,
+          total: config.wallet.bundleWallets.length,
+        });
+      }
+
+      case 'fund': {
+        const { amountPerWallet } = body;
+
+        if (!amountPerWallet || amountPerWallet <= 0) {
+          return NextResponse.json(
+            { error: 'Invalid fund amount' },
+            { status: 400 }
+          );
+        }
+
+        if (!config.wallet?.mainWalletPrivateKey) {
+          return NextResponse.json(
+            { error: 'Main wallet not configured' },
+            { status: 400 }
+          );
+        }
+
+        const bundleWallets = config.wallet.bundleWallets || [];
+        if (bundleWallets.length === 0) {
+          return NextResponse.json(
+            { error: 'No bundle wallets to fund' },
+            { status: 400 }
+          );
+        }
+
+        // Create main wallet keypair
+        const mainKeypair = Keypair.fromSecretKey(bs58.decode(config.wallet.mainWalletPrivateKey));
+
+        // Check main wallet balance
+        const mainBalance = await connection.getBalance(mainKeypair.publicKey);
+        const requiredAmount = (amountPerWallet * bundleWallets.length * LAMPORTS_PER_SOL) + (5000 * bundleWallets.length); // Include fees
+
+        if (mainBalance < requiredAmount) {
+          return NextResponse.json(
+            { error: `Insufficient balance. Need ${requiredAmount / LAMPORTS_PER_SOL} SOL, have ${mainBalance / LAMPORTS_PER_SOL} SOL` },
+            { status: 400 }
+          );
+        }
+
+        // Fund all wallets
+        let funded = 0;
+        for (const privateKey of bundleWallets) {
+          try {
+            const destKeypair = Keypair.fromSecretKey(bs58.decode(privateKey));
+
+            const transaction = new Transaction().add(
+              SystemProgram.transfer({
+                fromPubkey: mainKeypair.publicKey,
+                toPubkey: destKeypair.publicKey,
+                lamports: Math.floor(amountPerWallet * LAMPORTS_PER_SOL),
+              })
+            );
+
+            const signature = await connection.sendTransaction(transaction, [mainKeypair]);
+            await connection.confirmTransaction(signature);
+
+            funded++;
+          } catch (error) {
+            console.error('Failed to fund wallet:', error);
+          }
+        }
+
+        return NextResponse.json({
+          success: true,
+          funded,
+          total: bundleWallets.length,
+        });
+      }
+
+      case 'clearEmpty': {
+        if (!config.wallet) {
+          return NextResponse.json(
+            { error: 'No wallet configuration found' },
+            { status: 400 }
+          );
+        }
+
+        const bundleWallets = config.wallet.bundleWallets || [];
+
+        // Check each wallet and remove if empty
+        const keepWallets: string[] = [];
+        let removed = 0;
+
+        for (const privateKey of bundleWallets) {
+          try {
+            const info = await getWalletInfo(connection, privateKey);
+
+            if (info.status !== 'empty') {
+              keepWallets.push(privateKey);
+            } else {
+              removed++;
+            }
+          } catch (error) {
+            // Keep wallet if we can't check it
+            keepWallets.push(privateKey);
+          }
+        }
+
+        config.wallet.bundleWallets = keepWallets;
+        config.wallet.walletCount = keepWallets.length;
+
+        saveConfig(config);
+
+        return NextResponse.json({
+          success: true,
+          removed,
+          remaining: keepWallets.length,
+        });
+      }
+
+      default:
+        return NextResponse.json(
+          { error: 'Invalid action' },
+          { status: 400 }
+        );
+    }
+  } catch (error) {
+    console.error('Wallet operation failed:', error);
+    return NextResponse.json(
+      { error: 'Wallet operation failed' },
+      { status: 500 }
+    );
+  }
+}

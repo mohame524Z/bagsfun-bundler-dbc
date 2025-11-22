@@ -12,6 +12,7 @@ import VolumePanel from '../components/VolumePanel';
 import RPCManager from '../components/RPCManager';
 import PortfolioPanel from '../components/PortfolioPanel';
 import SellPanel from '../components/SellPanel';
+import WalletManager from '../components/WalletManager';
 import SetupWizard from '../components/SetupWizard';
 
 // Initialize connection (should come from RPC manager in production)
@@ -19,7 +20,7 @@ const connection = new Connection('https://api.mainnet-beta.solana.com');
 
 export default function Home() {
   const { connected } = useWallet();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'portfolio' | 'create' | 'sell' | 'sniper' | 'volume' | 'rpc'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'portfolio' | 'create' | 'sell' | 'sniper' | 'volume' | 'rpc' | 'wallets'>('dashboard');
   const [mode, setMode] = useState<PumpMode>(PumpMode.MAYHEM);
   const [configExists, setConfigExists] = useState<boolean | null>(null);
   const [checkingConfig, setCheckingConfig] = useState(true);
@@ -111,6 +112,7 @@ export default function Home() {
           <nav className="flex gap-2 mt-6 flex-wrap">
             {[
               { id: 'dashboard', label: '📊 Dashboard' },
+              { id: 'wallets', label: '👛 Wallets' },
               { id: 'portfolio', label: '💼 Portfolio' },
               { id: 'create', label: '🚀 Create' },
               { id: 'sell', label: '💰 Sell' },
@@ -152,6 +154,7 @@ export default function Home() {
         ) : (
           <div>
             {activeTab === 'dashboard' && <Dashboard mode={mode} />}
+            {activeTab === 'wallets' && <WalletManager />}
             {activeTab === 'portfolio' && <PortfolioPanel connection={connection} mode={mode} />}
             {activeTab === 'create' && <TokenCreator mode={mode} />}
             {activeTab === 'sell' && <SellPanel connection={connection} mode={mode} />}
