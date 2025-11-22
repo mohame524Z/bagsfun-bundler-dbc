@@ -40,23 +40,21 @@ export async function POST(request: NextRequest) {
   try {
     const updates = await request.json();
 
-    // Load existing config
+    // Load existing config or use updates as new config
     let config: AppConfig;
     if (fs.existsSync(CONFIG_PATH)) {
       const configData = fs.readFileSync(CONFIG_PATH, 'utf-8');
       config = JSON.parse(configData);
-    } else {
-      return NextResponse.json(
-        { error: 'Configuration not found. Please run setup first.' },
-        { status: 404 }
-      );
-    }
 
-    // Update config (shallow merge)
-    const updatedConfig = {
-      ...config,
-      ...updates,
-    };
+      // Update config (shallow merge)
+      config = {
+        ...config,
+        ...updates,
+      };
+    } else {
+      // No existing config, use the provided data as the new config
+      config = updates as AppConfig;
+    }
 
     // Save config
     const configDir = path.dirname(CONFIG_PATH);
@@ -64,7 +62,7 @@ export async function POST(request: NextRequest) {
       fs.mkdirSync(configDir, { recursive: true });
     }
 
-    fs.writeFileSync(CONFIG_PATH, JSON.stringify(updatedConfig, null, 2));
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
 
     return NextResponse.json({ success: true });
   } catch (error) {

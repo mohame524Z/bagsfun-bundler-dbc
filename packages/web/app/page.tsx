@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Connection } from '@solana/web3.js';
@@ -12,6 +12,7 @@ import VolumePanel from '../components/VolumePanel';
 import RPCManager from '../components/RPCManager';
 import PortfolioPanel from '../components/PortfolioPanel';
 import SellPanel from '../components/SellPanel';
+import SetupWizard from '../components/SetupWizard';
 
 // Initialize connection (should come from RPC manager in production)
 const connection = new Connection('https://api.mainnet-beta.solana.com');
@@ -20,6 +21,46 @@ export default function Home() {
   const { connected } = useWallet();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'portfolio' | 'create' | 'sell' | 'sniper' | 'volume' | 'rpc'>('dashboard');
   const [mode, setMode] = useState<PumpMode>(PumpMode.MAYHEM);
+  const [configExists, setConfigExists] = useState<boolean | null>(null);
+  const [checkingConfig, setCheckingConfig] = useState(true);
+
+  // Check if config exists on mount
+  useEffect(() => {
+    checkConfig();
+  }, []);
+
+  const checkConfig = async () => {
+    setCheckingConfig(true);
+    try {
+      const response = await fetch('/api/config');
+      setConfigExists(response.ok);
+    } catch (error) {
+      setConfigExists(false);
+    } finally {
+      setCheckingConfig(false);
+    }
+  };
+
+  const handleSetupComplete = () => {
+    setConfigExists(true);
+  };
+
+  // Show loading while checking config
+  if (checkingConfig) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">⏳</div>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show setup wizard if no config exists
+  if (configExists === false) {
+    return <SetupWizard onComplete={handleSetupComplete} />;
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
