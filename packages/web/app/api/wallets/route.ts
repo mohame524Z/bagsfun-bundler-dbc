@@ -132,8 +132,17 @@ export async function GET(request: NextRequest) {
 
             // Calculate health metrics
             const now = Date.now();
-            const transactionCount24h = Math.floor(Math.random() * 20); // Mock - would track real tx count
-            const lastActivity = now - Math.floor(Math.random() * 86400000); // Mock last activity
+
+            // Get real transaction count from last 24 hours
+            const publicKey = new PublicKey(info.address);
+            const signatures = await connection.getSignaturesForAddress(publicKey, { limit: 1000 });
+            const oneDayAgo = now - 86400000;
+            const transactionCount24h = signatures.filter(sig => (sig.blockTime || 0) * 1000 >= oneDayAgo).length;
+
+            // Get last activity from most recent transaction
+            const lastActivity = signatures.length > 0 && signatures[0].blockTime
+              ? signatures[0].blockTime * 1000
+              : now - 86400000 * 7; // Default to 7 days ago if no transactions
 
             // Calculate health score (0-100)
             let healthScore = 100;

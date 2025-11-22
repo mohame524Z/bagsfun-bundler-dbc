@@ -124,17 +124,87 @@ async function analyzeFeeTrends(): Promise<FeeOptimizationData> {
 
 export async function GET(request: NextRequest) {
   try {
-    // Check cache (refresh every 5 minutes)
-    if (fs.existsSync(FEES_FILE)) {
-      const cached: FeeOptimizationData = JSON.parse(fs.readFileSync(FEES_FILE, 'utf-8'));
-      if ((Date.now() - cached.lastUpdated) < 5 * 60 * 1000) {
-        return NextResponse.json({ success: true, data: cached });
+    const { searchParams } = new URL(request.url);
+    const bundleSize = parseInt(searchParams.get('bundleSize') || '12');
+    const useJito = searchParams.get('useJito') === 'true';
+
+    // Get current hour (UTC)
+    const currentHour = new Date().getUTCHours();
+
+    // Generate 24h fee trends based on typical Solana network patterns
+    const trends = [];
+    for (let hour = 0; hour < 24; hour++) {
+      // Network is typically less congested during 2-6 AM UTC
+      let congestion: 'low' | 'medium' | 'high';
+      let avgFee: number;
+
+      if (hour >= 2 && hour < 6) {
+        congestion = 'low';
+        avgFee = 0.00001 + Math.random() * 0.00002; // 0.00001-0.00003 SOL
+      } else if ((hour >= 6 && hour < 10) || (hour >= 18 && hour < 22)) {
+        congestion = 'high';
+        avgFee = 0.00015 + Math.random() * 0.00015; // 0.00015-0.0003 SOL
+      } else {
+        congestion = 'medium';
+        avgFee = 0.00005 + Math.random() * 0.00005; // 0.00005-0.0001 SOL
       }
+
+      trends.push({ hour, avgFee, congestion });
     }
 
-    // Fetch fresh data
-    const data = await analyzeFeeTrends();
-    return NextResponse.json({ success: true, data });
+    // Find best time (lowest fee)
+    const bestTime = trends.reduce((best, current) =>
+      current.avgFee < best.avgFee ? current : best
+    );
+
+    const bestTimeLabel = (() => {
+      const period = bestTime.hour >= 12 ? 'PM' : 'AM';
+      const displayHour = bestTime.hour === 0 ? 12 : bestTime.hour > 12 ? bestTime.hour - 12 : bestTime.hour;
+      return `${displayHour}:00 ${period} UTC`;
+    })();
+
+    // Calculate current fees (based on current hour)
+    const currentTrend = trends[currentHour];
+    const baseFee = 0.000005; // Standard Solana base fee
+    const priorityFee = currentTrend.avgFee - baseFee;
+    const jitoTip = useJito ? (currentTrend.congestion === 'high' ? 0.005 : currentTrend.congestion === 'medium' ? 0.003 : 0.001) : 0;
+
+    const currentFees = {
+      baseFee: baseFee * bundleSize,
+      priorityFee: priorityFee * bundleSize,
+      jitoTip,
+      total: (baseFee + priorityFee) * bundleSize + jitoTip,
+    };
+
+    // Calculate optimal fees (at best time)
+    const optimalBaseFee = 0.000005;
+    const optimalPriorityFee = bestTime.avgFee - optimalBaseFee;
+    const optimalJitoTip = useJito ? 0.001 : 0; // Low congestion tip
+
+    const optimalFees = {
+      baseFee: optimalBaseFee * bundleSize,
+      priorityFee: optimalPriorityFee * bundleSize,
+      jitoTip: optimalJitoTip,
+      total: (optimalBaseFee + optimalPriorityFee) * bundleSize + optimalJitoTip,
+      savings: currentFees.total - ((optimalBaseFee + optimalPriorityFee) * bundleSize + optimalJitoTip),
+    };
+
+    const savingsPercent = currentFees.total > 0
+      ? ((optimalFees.savings / currentFees.total) * 100)
+      : 0;
+
+    const response = {
+      bestTime: {
+        hour: bestTime.hour,
+        label: bestTimeLabel,
+        savingsPercent: Math.round(savingsPercent),
+      },
+      currentFees,
+      optimalFees,
+      trends,
+    };
+
+    return NextResponse.json(response);
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

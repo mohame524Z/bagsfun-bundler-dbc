@@ -1,10 +1,49 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { PumpMode } from '@pump-bundler/types';
 
+interface AnalyticsSummary {
+  totalTokensCreated: number;
+  activeTokens: number;
+  graduatedTokens: number;
+  failedTokens: number;
+  totalBundles: number;
+  avgBundleSuccessRate: number;
+  avgConfirmationTime: number;
+  totalInvested: number;
+  totalPnL: number;
+  avgPnLPercent: number;
+  totalFeesSpent: number;
+  totalJitoTips: number;
+}
+
 export default function Dashboard({ mode }: { mode: PumpMode }) {
   const { publicKey } = useWallet();
+  const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadSummary();
+    // Refresh every 30 seconds
+    const interval = setInterval(loadSummary, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadSummary = async () => {
+    try {
+      const response = await fetch('/api/analytics?action=summary');
+      const data = await response.json();
+      if (data.success && data.summary) {
+        setSummary(data.summary);
+      }
+    } catch (error) {
+      console.error('Failed to load analytics summary:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -12,26 +51,26 @@ export default function Dashboard({ mode }: { mode: PumpMode }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Volume"
-          value="1,234 SOL"
-          change="+12.5%"
+          value={loading ? '...' : `${summary?.totalInvested.toFixed(2) || '0'} SOL`}
+          change={summary?.totalPnL ? `${summary.totalPnL >= 0 ? '+' : ''}${summary.totalPnL.toFixed(2)} SOL` : '+0%'}
           icon="💰"
         />
         <StatCard
           title="Tokens Created"
-          value="42"
-          change="+5"
+          value={loading ? '...' : `${summary?.totalTokensCreated || 0}`}
+          change={summary?.activeTokens ? `${summary.activeTokens} active` : '0'}
           icon="🪙"
         />
         <StatCard
-          title="Active Bundles"
-          value="3"
-          change="0"
+          title="Total Bundles"
+          value={loading ? '...' : `${summary?.totalBundles || 0}`}
+          change={summary?.graduatedTokens ? `${summary.graduatedTokens} graduated` : '0'}
           icon="📦"
         />
         <StatCard
           title="Success Rate"
-          value="98.5%"
-          change="+1.2%"
+          value={loading ? '...' : `${summary?.avgBundleSuccessRate.toFixed(1) || '0'}%`}
+          change={summary?.avgConfirmationTime ? `~${(summary.avgConfirmationTime / 1000).toFixed(1)}s avg` : '+0%'}
           icon="✅"
         />
       </div>

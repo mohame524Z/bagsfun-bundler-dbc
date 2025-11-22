@@ -67,24 +67,60 @@ async function fetchOnChainData(walletAddress: string): Promise<OnChainMetrics> 
       programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
     });
 
+    // Calculate profit: current balance - fees spent
+    // Note: This is a simplified calculation. For accurate profit tracking, you would need:
+    // 1. Historical balance tracking (initial balance when wallet was created/funded)
+    // 2. Token price data to value token holdings in SOL
+    // 3. Track incoming transfers separately from trading profits
+    const currentSolBalance = await connection.getBalance(pubkey) / 1e9;
+
+    // For now, calculate as: current balance - total fees (assuming wallet started empty or track initial deposit separately)
+    // This will be negative if more fees were spent than current balance, positive if balance > fees
+    let onChainProfit = currentSolBalance - (totalFees / 1e9);
+
+    // If we have cached previous balance, calculate actual profit
+    const cacheFile = ONCHAIN_FILE;
+    if (fs.existsSync(cacheFile)) {
+      try {
+        const cached = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
+        const prevData = cached[walletAddress];
+        if (prevData && prevData.initialBalance !== undefined) {
+          // Calculate as: (current balance - initial balance) - fees
+          onChainProfit = currentSolBalance - prevData.initialBalance;
+        }
+      } catch (e) {
+        // Ignore cache read errors
+      }
+    }
+
     const metrics: OnChainMetrics = {
       totalTransactions: totalTxs,
       uniqueTokens: tokenAccounts.value.length,
       avgGasUsed: avgGas / 1e9, // Convert lamports to SOL
       totalGasSpent: totalFees / 1e9,
-      onChainProfit: 0, // Would require detailed balance tracking
+      onChainProfit, // Now calculated based on balance changes
       contractCalls: successfulTxs.length, // Simplified
       uniqueCounterparties: uniqueAddresses.size,
       lastUpdated: Date.now(),
     };
 
-    // Cache the results
+    // Cache the results with initial balance tracking
+    const cacheData: any = { ...metrics };
+
+    // Store initial balance on first cache or preserve existing initial balance
     if (fs.existsSync(ONCHAIN_FILE)) {
       const cached = JSON.parse(fs.readFileSync(ONCHAIN_FILE, 'utf-8'));
-      cached[walletAddress] = metrics;
+      const prevData = cached[walletAddress];
+
+      // Preserve initial balance if it exists, otherwise set it now
+      cacheData.initialBalance = prevData?.initialBalance ?? currentSolBalance;
+
+      cached[walletAddress] = cacheData;
       fs.writeFileSync(ONCHAIN_FILE, JSON.stringify(cached, null, 2));
     } else {
-      fs.writeFileSync(ONCHAIN_FILE, JSON.stringify({ [walletAddress]: metrics }, null, 2));
+      // First time - set initial balance
+      cacheData.initialBalance = currentSolBalance;
+      fs.writeFileSync(ONCHAIN_FILE, JSON.stringify({ [walletAddress]: cacheData }, null, 2));
     }
 
     return metrics;

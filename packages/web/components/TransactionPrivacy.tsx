@@ -2,18 +2,18 @@
 import { useState, useEffect } from 'react';
 
 interface PrivacyConfig {
-  useTorRouting: boolean;
+  torRouting: boolean;
   randomizeAmounts: boolean;
-  delayTransactions: boolean;
-  useProxyWallets: boolean;
+  timingDelays: boolean;
+  proxyWallets: boolean;
 }
 
 export default function TransactionPrivacy() {
   const [config, setConfig] = useState<PrivacyConfig>({
-    useTorRouting: false,
+    torRouting: false,
     randomizeAmounts: true,
-    delayTransactions: true,
-    useProxyWallets: false,
+    timingDelays: true,
+    proxyWallets: false,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,8 +31,10 @@ export default function TransactionPrivacy() {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data: PrivacyConfig = await response.json();
-      setConfig(data);
+      const data = await response.json();
+      if (data.success && data.settings) {
+        setConfig(data.settings);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to load privacy settings');
     } finally {

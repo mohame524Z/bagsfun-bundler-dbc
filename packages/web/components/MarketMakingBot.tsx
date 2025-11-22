@@ -104,7 +104,7 @@ export default function MarketMakingBot() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: config.enabled ? 'stop' : 'start',
-          config,
+          tokenAddress: config.tokenAddress,
         }),
       });
 
@@ -132,7 +132,11 @@ export default function MarketMakingBot() {
       const response = await fetch('/api/marketmaker', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'updateConfig', config }),
+        body: JSON.stringify({
+          action: 'updateConfig',
+          tokenAddress: config.tokenAddress,
+          updates: config
+        }),
       });
 
       const data = await response.json();
