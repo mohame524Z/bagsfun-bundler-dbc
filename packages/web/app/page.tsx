@@ -25,11 +25,16 @@ import WalletHealthMonitor from '../components/WalletHealthMonitor';
 import FeeOptimizer from '../components/FeeOptimizer';
 import MultiTokenPortfolio from '../components/MultiTokenPortfolio';
 import AchievementSystem from '../components/AchievementSystem';
+import SniperImprovements from '../components/SniperImprovements';
+import VolumeEnhancements from '../components/VolumeEnhancements';
+import ProfitDistribution from '../components/ProfitDistribution';
+import PerformanceBenchmarking from '../components/PerformanceBenchmarking';
+import ABTestingFramework from '../components/ABTestingFramework';
 
 // Initialize connection (should come from RPC manager in production)
 const connection = new Connection('https://api.mainnet-beta.solana.com');
 
-type TabType = 'dashboard' | 'portfolio' | 'create' | 'sell' | 'sniper' | 'volume' | 'rpc' | 'wallets' | 'analytics' | 'autosell' | 'simulation' | 'templates' | 'emergency' | 'namegen' | 'bundlestats' | 'health' | 'fees' | 'multiportfolio' | 'achievements';
+type TabType = 'dashboard' | 'portfolio' | 'create' | 'sell' | 'sniper' | 'volume' | 'rpc' | 'wallets' | 'analytics' | 'autosell' | 'simulation' | 'templates' | 'emergency' | 'namegen' | 'bundlestats' | 'health' | 'fees' | 'multiportfolio' | 'achievements' | 'advsniper' | 'advvolume' | 'distribution' | 'benchmarks' | 'abtesting';
 
 export default function Home() {
   const { connected } = useWallet();
@@ -127,18 +132,23 @@ export default function Home() {
               { id: 'dashboard', label: '📊 Dashboard' },
               { id: 'analytics', label: '📈 Analytics' },
               { id: 'bundlestats', label: '📊 Bundle Stats' },
+              { id: 'benchmarks', label: '🏅 Benchmarks' },
               { id: 'wallets', label: '👛 Wallets' },
-              { id: 'health', label: '🏥 Wallet Health' },
+              { id: 'health', label: '🏥 Health' },
               { id: 'portfolio', label: '💼 Portfolio' },
-              { id: 'multiportfolio', label: '💼 Multi-Token' },
+              { id: 'multiportfolio', label: '💎 Multi-Token' },
               { id: 'create', label: '🚀 Create' },
               { id: 'sell', label: '💰 Sell' },
               { id: 'sniper', label: '🎯 Sniper' },
+              { id: 'advsniper', label: '🎯 Adv Sniper' },
               { id: 'volume', label: '📊 Volume' },
+              { id: 'advvolume', label: '📊 Adv Volume' },
               { id: 'autosell', label: '🎯 Auto-Sell' },
-              { id: 'fees', label: '💸 Fee Optimizer' },
+              { id: 'distribution', label: '💰 Distribution' },
+              { id: 'fees', label: '💸 Fees' },
               { id: 'templates', label: '📋 Templates' },
               { id: 'simulation', label: '🧪 Simulation' },
+              { id: 'abtesting', label: '🧪 A/B Testing' },
               { id: 'achievements', label: '🏆 Achievements' },
               { id: 'namegen', label: '🤖 Name Gen' },
               { id: 'emergency', label: '🚨 Emergency' },
@@ -180,6 +190,7 @@ export default function Home() {
             {activeTab === 'dashboard' && <Dashboard mode={mode} />}
             {activeTab === 'analytics' && <TokenPerformanceDashboard />}
             {activeTab === 'bundlestats' && <BundleAnalytics />}
+            {activeTab === 'benchmarks' && <PerformanceBenchmarking />}
             {activeTab === 'wallets' && <WalletManager />}
             {activeTab === 'health' && <WalletHealthMonitor />}
             {activeTab === 'portfolio' && <PortfolioPanel connection={connection} mode={mode} />}
@@ -187,11 +198,15 @@ export default function Home() {
             {activeTab === 'create' && <TokenCreator mode={mode} />}
             {activeTab === 'sell' && <SellPanel connection={connection} mode={mode} />}
             {activeTab === 'sniper' && <SniperPanel mode={mode} />}
+            {activeTab === 'advsniper' && <SniperImprovements />}
             {activeTab === 'volume' && <VolumePanel mode={mode} />}
+            {activeTab === 'advvolume' && <VolumeEnhancements />}
             {activeTab === 'autosell' && <AutoSellStrategies />}
+            {activeTab === 'distribution' && <ProfitDistribution />}
             {activeTab === 'fees' && <FeeOptimizer />}
             {activeTab === 'templates' && <OneClickTemplates />}
             {activeTab === 'simulation' && <SimulationMode />}
+            {activeTab === 'abtesting' && <ABTestingFramework />}
             {activeTab === 'achievements' && <AchievementSystem />}
             {activeTab === 'namegen' && <AITokenNameGenerator />}
             {activeTab === 'emergency' && <EmergencyStopLoss />}
