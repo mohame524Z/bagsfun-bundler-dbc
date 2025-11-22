@@ -225,7 +225,7 @@ export class RPCManager {
     return false;
   }
 
-  async switchTo Endpoint(endpointId: string): Promise<void> {
+  async switchToEndpoint(endpointId: string): Promise<void> {
     const index = this.endpoints.findIndex(e => e.id === endpointId);
 
     if (index === -1) {
