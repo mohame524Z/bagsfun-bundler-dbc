@@ -43,11 +43,12 @@ import RugPullSimulator from '../components/RugPullSimulator';
 import SocialTrading from '../components/SocialTrading';
 import SmartNotifications from '../components/SmartNotifications';
 import SecuritySettings from '../components/SecuritySettings';
+import HealthDashboard from '../components/HealthDashboard';
 
 // Initialize connection (should come from RPC manager in production)
 const connection = new Connection('https://api.mainnet-beta.solana.com');
 
-type TabType = 'dashboard' | 'portfolio' | 'create' | 'sell' | 'sniper' | 'volume' | 'rpc' | 'wallets' | 'analytics' | 'autosell' | 'simulation' | 'templates' | 'emergency' | 'namegen' | 'bundlestats' | 'health' | 'fees' | 'multiportfolio' | 'achievements' | 'advsniper' | 'advvolume' | 'distribution' | 'benchmarks' | 'abtesting' | 'intelligence' | 'marketmaker' | 'isolation' | 'privacy' | 'scripts' | 'apitools' | 'sharing' | 'onchain' | 'sentiment' | 'rugsim' | 'social' | 'notifications' | 'security';
+type TabType = 'dashboard' | 'portfolio' | 'create' | 'sell' | 'sniper' | 'volume' | 'rpc' | 'wallets' | 'analytics' | 'autosell' | 'simulation' | 'templates' | 'emergency' | 'namegen' | 'bundlestats' | 'health' | 'fees' | 'multiportfolio' | 'achievements' | 'advsniper' | 'advvolume' | 'distribution' | 'benchmarks' | 'abtesting' | 'intelligence' | 'marketmaker' | 'isolation' | 'privacy' | 'scripts' | 'apitools' | 'sharing' | 'onchain' | 'sentiment' | 'rugsim' | 'social' | 'notifications' | 'security' | 'healthdashboard';
 
 export default function Home() {
   const { connected } = useWallet();
@@ -143,6 +144,7 @@ export default function Home() {
           <nav className="flex gap-2 mt-6 flex-wrap">
             {[
               { id: 'dashboard', label: '📊 Dashboard' },
+              { id: 'healthdashboard', label: '🏥 System Health' },
               { id: 'analytics', label: '📈 Analytics' },
               { id: 'bundlestats', label: '📊 Bundle Stats' },
               { id: 'benchmarks', label: '🏅 Benchmarks' },
@@ -214,6 +216,7 @@ export default function Home() {
         ) : (
           <div>
             {activeTab === 'dashboard' && <Dashboard mode={mode} />}
+            {activeTab === 'healthdashboard' && <HealthDashboard />}
             {activeTab === 'analytics' && <TokenPerformanceDashboard />}
             {activeTab === 'bundlestats' && <BundleAnalytics />}
             {activeTab === 'benchmarks' && <PerformanceBenchmarking />}
