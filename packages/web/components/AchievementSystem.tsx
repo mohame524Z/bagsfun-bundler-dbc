@@ -62,8 +62,8 @@ export default function AchievementSystem() {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data: Achievement[] = await response.json();
-      setAchievements(data);
+      const data = await response.json();
+      setAchievements(data.achievements || []);
     } catch (err) {
       console.error('Failed to load achievements:', err);
     } finally {

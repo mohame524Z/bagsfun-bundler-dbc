@@ -29,8 +29,8 @@ export default function SmartNotifications() {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data: NotificationRule[] = await response.json();
-      setRules(data);
+      const data = await response.json();
+      setRules(data.rules || []);
     } catch (err: any) {
       setError(err.message || 'Failed to load notification rules');
     } finally {

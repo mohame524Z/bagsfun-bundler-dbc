@@ -16,13 +16,16 @@
   },
   "devDependencies": {
     "@types/node": "^20.14.1",
-    "typescript": "^5.3.3",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   },
   "engines": {
     "node": ">=16.0.0",
     "yarn": ">=1.22.0"
   },
   "author": "Pump Bundler Team",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "pino-pretty": "^13.1.2"
+  }
 }

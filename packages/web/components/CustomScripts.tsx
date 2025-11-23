@@ -31,8 +31,8 @@ export default function CustomScripts() {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data: CustomScript[] = await response.json();
-      setScripts(data);
+      const data = await response.json();
+      setScripts(data.scripts || []);
     } catch (err: any) {
       setError(err.message || 'Failed to load scripts');
     } finally {
