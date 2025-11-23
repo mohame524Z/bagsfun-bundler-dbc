@@ -30,8 +30,8 @@ export default function SocialTrading() {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data: Trader[] = await response.json();
-      setTopTraders(data);
+      const data = await response.json();
+      setTopTraders(data.traders || []);
     } catch (err: any) {
       setError(err.message || 'Failed to load traders');
     } finally {

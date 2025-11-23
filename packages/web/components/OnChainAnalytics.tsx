@@ -31,8 +31,8 @@ export default function OnChainAnalytics() {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data: OnChainMetrics = await response.json();
-      setMetrics(data);
+      const data = await response.json();
+      setMetrics(data.metrics || null);
     } catch (err: any) {
       setError(err.message || 'Failed to load metrics');
     } finally {
