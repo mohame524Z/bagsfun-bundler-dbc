@@ -145,8 +145,13 @@ export default function CompetitorIntelligence() {
     <div className="space-y-6">
       <div className="flex justify-between items-start">
         <div>
-          <h2 className="text-2xl font-bold text-white">🔍 Competitor Intelligence</h2>
-          <p className="text-gray-400 text-sm mt-1">Track and analyze successful traders</p>
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold text-white">🔍 Competitor Intelligence</h2>
+            <span className="px-3 py-1 bg-cyan-600/20 border border-cyan-500/50 text-cyan-400 text-xs font-semibold rounded-full">
+              🧪 LIMITED BETA
+            </span>
+          </div>
+          <p className="text-gray-400 text-sm mt-1">Track and analyze successful traders (Limited data sources)</p>
         </div>
         <label className="flex items-center gap-2 text-sm text-gray-300">
           <input

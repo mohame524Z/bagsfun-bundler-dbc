@@ -16,6 +16,7 @@ export default function AITokenNameGenerator() {
   const [suggestions, setSuggestions] = useState<GeneratedToken[]>([]);
   const [category, setCategory] = useState('meme');
   const [theme, setTheme] = useState('');
+  const isComingSoon = true; // AI generation coming soon
 
   const categories = [
     { value: 'meme', label: '😂 Meme', desc: 'Funny, viral, community-driven' },
@@ -123,8 +124,13 @@ export default function AITokenNameGenerator() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-white">🤖 AI Token Name Generator</h2>
-        <p className="text-gray-400 text-sm mt-1">Generate viral token names with meme potential scoring</p>
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-white">🤖 AI Token Name Generator</h2>
+          <span className="px-3 py-1 bg-yellow-600/20 border border-yellow-500/50 text-yellow-400 text-xs font-semibold rounded-full">
+            🚧 COMING SOON
+          </span>
+        </div>
+        <p className="text-gray-400 text-sm mt-1">Generate viral token names with meme potential scoring (Currently showing template suggestions)</p>
       </div>
 
       {/* Generator Form */}
