@@ -111,7 +111,7 @@ export class PumpFunClient {
     metadata: TokenMetadata,
     metadataUri: string,
     initialBuy: number
-  ): Transaction {
+  ): Promise<Transaction> {
     const modeConfig = this.getModeConfig();
 
     // Derive PDAs
@@ -270,7 +270,7 @@ export class PumpFunClient {
   // Buy/Sell Instructions
   // ============================================
 
-  async buildBuyInstruction(params: PumpFunBuyParams): TransactionInstruction {
+  async buildBuyInstruction(params: PumpFunBuyParams): Promise<TransactionInstruction> {
     const { mint, amount, slippage, buyer } = params;
 
     // Get bonding curve
