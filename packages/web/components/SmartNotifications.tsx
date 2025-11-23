@@ -150,9 +150,11 @@ export default function SmartNotifications() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-white font-medium">{rule.name}</h3>
-                    <span className={`px-2 py-1 rounded text-xs ${getTypeColor(rule.type)}`}>
-                      {rule.type.replace('_', ' ').toUpperCase()}
-                    </span>
+                    {rule.type && (
+                      <span className={`px-2 py-1 rounded text-xs ${getTypeColor(rule.type)}`}>
+                        {rule.type.replace('_', ' ').toUpperCase()}
+                      </span>
+                    )}
                   </div>
                   <p className="text-sm text-gray-400">{rule.conditions}</p>
                 </div>

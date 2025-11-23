@@ -184,29 +184,29 @@ export default function VolumeEnhancements() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="bg-gray-800 rounded-lg p-4">
             <div className="text-gray-400 text-sm">24h Volume</div>
-            <div className="text-2xl font-bold text-white">{stats.totalVolume24h.toFixed(2)} SOL</div>
+            <div className="text-2xl font-bold text-white">{(stats.totalVolume24h || 0).toFixed(2)} SOL</div>
           </div>
           <div className="bg-gray-800 rounded-lg p-4">
             <div className="text-gray-400 text-sm">Total Trades</div>
-            <div className="text-2xl font-bold text-cyan-400">{stats.totalTrades}</div>
+            <div className="text-2xl font-bold text-cyan-400">{stats.totalTrades || 0}</div>
           </div>
           <div className="bg-gray-800 rounded-lg p-4">
             <div className="text-gray-400 text-sm">Avg Trade Size</div>
-            <div className="text-2xl font-bold text-purple-400">{stats.avgTradeSize.toFixed(3)} SOL</div>
+            <div className="text-2xl font-bold text-purple-400">{(stats.avgTradeSize || 0).toFixed(3)} SOL</div>
           </div>
           <div className="bg-gray-800 rounded-lg p-4">
             <div className="text-gray-400 text-sm">Active Wallets</div>
-            <div className="text-2xl font-bold text-green-400">{stats.uniqueWallets}</div>
+            <div className="text-2xl font-bold text-green-400">{stats.uniqueWallets || 0}</div>
           </div>
           <div className="bg-gray-800 rounded-lg p-4">
             <div className="text-gray-400 text-sm">Detection Risk</div>
-            <div className={`text-lg font-bold ${getRiskColor(stats.detectionRisk)}`}>
-              {stats.detectionRisk.toUpperCase()}
+            <div className={`text-lg font-bold ${getRiskColor(stats.detectionRisk || 'low')}`}>
+              {(stats.detectionRisk || 'low').toUpperCase()}
             </div>
           </div>
           <div className="bg-gray-800 rounded-lg p-4">
             <div className="text-gray-400 text-sm">Organic Ratio</div>
-            <div className="text-2xl font-bold text-yellow-400">{stats.organicRatio.toFixed(0)}%</div>
+            <div className="text-2xl font-bold text-yellow-400">{(stats.organicRatio || 0).toFixed(0)}%</div>
           </div>
         </div>
       )}
@@ -254,9 +254,9 @@ export default function VolumeEnhancements() {
                 </div>
                 <div>
                   <div className="text-gray-400 text-sm">Current Volume (24h)</div>
-                  <div className="text-cyan-400 font-medium">{strategy.currentVolume24h.toFixed(2)} SOL</div>
+                  <div className="text-cyan-400 font-medium">{(strategy.currentVolume24h || 0).toFixed(2)} SOL</div>
                   <div className="text-xs text-gray-500">
-                    {((strategy.currentVolume24h / strategy.targetVolume24h) * 100).toFixed(0)}% of target
+                    {(((strategy.currentVolume24h || 0) / (strategy.targetVolume24h || 1)) * 100).toFixed(0)}% of target
                   </div>
                 </div>
                 <div>

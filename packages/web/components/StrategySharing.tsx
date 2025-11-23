@@ -36,8 +36,9 @@ export default function StrategySharing() {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data: SharedStrategy[] = await response.json();
-      setStrategies(data);
+      const data = await response.json();
+      // Ensure data is an array
+      setStrategies(Array.isArray(data) ? data : []);
     } catch (err: any) {
       setError(err.message || 'Failed to load strategies');
     } finally {
