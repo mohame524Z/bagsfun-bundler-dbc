@@ -330,10 +330,10 @@ export class Seller {
       batchResults.forEach((result) => {
         if (result) {
           results.push(result);
-          if (result.success && 'sellAmount' in result) {
+          if (result.success && 'sellAmount' in result && result.sellAmount !== undefined) {
             totalSold += result.sellAmount;
-            totalReceived += result.solReceived;
-            totalPnL += result.profitLoss;
+            totalReceived += result.solReceived || 0;
+            totalPnL += result.profitLoss || 0;
           }
         }
       });
