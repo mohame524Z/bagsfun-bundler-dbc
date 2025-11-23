@@ -8,19 +8,9 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production',
   },
 
-  // Optimize package imports
-  modularizeImports: {
-    '@solana/web3.js': {
-      transform: '@solana/web3.js/lib/index.esm.js',
-    },
-  },
-
-  // Experimental features for better performance
+  // Experimental features for better performance (stable ones only)
   experimental: {
     optimizePackageImports: ['@solana/web3.js', 'recharts'],
-    turbo: {
-      loaders: {},
-    },
   },
 
   webpack: (config, { isServer }) => {
@@ -39,12 +29,6 @@ const nextConfig = {
         tls: false,
       };
     }
-
-    // Reduce bundle size
-    config.optimization = {
-      ...config.optimization,
-      moduleIds: 'deterministic',
-    };
 
     return config;
   },
